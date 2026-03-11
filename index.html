@@ -1,27 +1,26 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Mini Walk Tycoon</title>
+<title>EchoDupe Mini Tycoon</title>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+
 <style>
-body {
-    margin:0;
-    background:#111;
-    color:white;
-    font-family:Arial;
-    text-align:center;
+body{
+margin:0;
+overflow:hidden;
+font-family:Arial;
 }
 
 #ui{
-    position:absolute;
-    top:10px;
-    left:10px;
-    font-size:18px;
-}
-
-canvas{
-    background:#222;
-    display:block;
-    margin:auto;
+position:absolute;
+top:10px;
+left:10px;
+color:white;
+font-size:18px;
+background:rgba(0,0,0,0.5);
+padding:10px;
+border-radius:8px;
 }
 </style>
 </head>
@@ -31,118 +30,174 @@ canvas{
 <div id="ui">
 Money: $<span id="money">0</span><br>
 Workers: <span id="workers">0</span><br>
-Walk to the blue shop to buy a worker ($50)
+Walk into trees for money 🌳<br>
+Blue house = buy worker ($25)
 </div>
-
-<canvas id="game" width="800" height="500"></canvas>
 
 <script>
 
-const canvas = document.getElementById("game")
-const ctx = canvas.getContext("2d")
+let scene = new THREE.Scene()
+scene.background = new THREE.Color(0x87ceeb)
+
+let camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000)
+
+let renderer = new THREE.WebGLRenderer()
+renderer.setSize(window.innerWidth,window.innerHeight)
+document.body.appendChild(renderer.domElement)
+
+let light = new THREE.DirectionalLight(0xffffff,1)
+light.position.set(50,100,50)
+scene.add(light)
+
+let groundGeo = new THREE.PlaneGeometry(200,200)
+let groundMat = new THREE.MeshStandardMaterial({color:0x3aa655})
+let ground = new THREE.Mesh(groundGeo,groundMat)
+ground.rotation.x = -Math.PI/2
+scene.add(ground)
+
+camera.position.y = 2
+
+let player = {
+x:0,
+z:0,
+speed:0.15
+}
 
 let money = 0
 let workers = 0
 
-const player = {
-    x:100,
-    y:100,
-    size:20,
-    speed:3
+let trees = []
+
+function createTree(x,z){
+
+let trunkGeo = new THREE.CylinderGeometry(0.3,0.3,2)
+let trunkMat = new THREE.MeshStandardMaterial({color:0x8b5a2b})
+let trunk = new THREE.Mesh(trunkGeo,trunkMat)
+
+trunk.position.set(x,1,z)
+scene.add(trunk)
+
+let leavesGeo = new THREE.SphereGeometry(1.2)
+let leavesMat = new THREE.MeshStandardMaterial({color:0x2ecc71})
+let leaves = new THREE.Mesh(leavesGeo,leavesMat)
+
+leaves.position.set(x,2.5,z)
+scene.add(leaves)
+
+trees.push({x:x,z:z})
+
 }
 
-const keys = {}
-
-const moneyNodes = []
-
-for(let i=0;i<10;i++){
-    moneyNodes.push({
-        x:Math.random()*760,
-        y:Math.random()*460,
-        size:15
-    })
+for(let i=0;i<25;i++){
+createTree(
+(Math.random()-0.5)*100,
+(Math.random()-0.5)*100
+)
 }
 
-const shop = {
-    x:700,
-    y:200,
-    size:40
-}
+let houseGeo = new THREE.BoxGeometry(5,4,5)
+let houseMat = new THREE.MeshStandardMaterial({color:0x3399ff})
+let shop = new THREE.Mesh(houseGeo,houseMat)
 
-document.addEventListener("keydown", e=>{
-    keys[e.key.toLowerCase()] = true
+shop.position.set(10,2,10)
+scene.add(shop)
+
+let keys = {}
+
+document.addEventListener("keydown",e=>{
+keys[e.key.toLowerCase()] = true
 })
 
-document.addEventListener("keyup", e=>{
-    keys[e.key.toLowerCase()] = false
+document.addEventListener("keyup",e=>{
+keys[e.key.toLowerCase()] = false
+})
+
+document.body.addEventListener("click",()=>{
+document.body.requestPointerLock()
+})
+
+document.addEventListener("mousemove",e=>{
+if(document.pointerLockElement===document.body){
+
+camera.rotation.y -= e.movementX*0.002
+camera.rotation.x -= e.movementY*0.002
+
+camera.rotation.x = Math.max(-1.2,Math.min(1.2,camera.rotation.x))
+
+}
 })
 
 function update(){
 
-    if(keys["w"] || keys["arrowup"]) player.y -= player.speed
-    if(keys["s"] || keys["arrowdown"]) player.y += player.speed
-    if(keys["a"] || keys["arrowleft"]) player.x -= player.speed
-    if(keys["d"] || keys["arrowright"]) player.x += player.speed
+let dirX = Math.sin(camera.rotation.y)
+let dirZ = Math.cos(camera.rotation.y)
 
-    player.x = Math.max(0,Math.min(canvas.width-player.size,player.x))
-    player.y = Math.max(0,Math.min(canvas.height-player.size,player.y))
-
-    moneyNodes.forEach(node=>{
-        if(
-            player.x < node.x + node.size &&
-            player.x + player.size > node.x &&
-            player.y < node.y + node.size &&
-            player.y + player.size > node.y
-        ){
-            money += 1
-            node.x = Math.random()*760
-            node.y = Math.random()*460
-        }
-    })
-
-    if(
-        player.x < shop.x + shop.size &&
-        player.x + player.size > shop.x &&
-        player.y < shop.y + shop.size &&
-        player.y + player.size > shop.y
-    ){
-        if(money >= 50){
-            money -= 50
-            workers++
-        }
-    }
-
-    money += workers * 0.02
-
-    document.getElementById("money").innerText = Math.floor(money)
-    document.getElementById("workers").innerText = workers
+if(keys["w"]){
+player.x += dirX*player.speed
+player.z += dirZ*player.speed
 }
 
-function draw(){
+if(keys["s"]){
+player.x -= dirX*player.speed
+player.z -= dirZ*player.speed
+}
 
-    ctx.clearRect(0,0,canvas.width,canvas.height)
+if(keys["a"]){
+player.x += dirZ*player.speed
+player.z -= dirX*player.speed
+}
 
-    ctx.fillStyle = "green"
-    moneyNodes.forEach(node=>{
-        ctx.fillRect(node.x,node.y,node.size,node.size)
-    })
+if(keys["d"]){
+player.x -= dirZ*player.speed
+player.z += dirX*player.speed
+}
 
-    ctx.fillStyle = "blue"
-    ctx.fillRect(shop.x,shop.y,shop.size,shop.size)
+camera.position.x = player.x
+camera.position.z = player.z
 
-    ctx.fillStyle = "red"
-    ctx.fillRect(player.x,player.y,player.size,player.size)
+trees.forEach(tree=>{
+
+let dx = player.x-tree.x
+let dz = player.z-tree.z
+let dist = Math.sqrt(dx*dx+dz*dz)
+
+if(dist<2){
+money += 5
+tree.x = (Math.random()-0.5)*100
+tree.z = (Math.random()-0.5)*100
+}
+
+})
+
+let dx = player.x-shop.position.x
+let dz = player.z-shop.position.z
+let dist = Math.sqrt(dx*dx+dz*dz)
+
+if(dist<4 && money>=25){
+money -= 25
+workers++
+}
+
+money += workers*0.05
+
+document.getElementById("money").innerText = Math.floor(money)
+document.getElementById("workers").innerText = workers
 
 }
 
-function gameLoop(){
-    update()
-    draw()
-    requestAnimationFrame(gameLoop)
+function animate(){
+
+update()
+
+renderer.render(scene,camera)
+
+requestAnimationFrame(animate)
+
 }
 
-gameLoop()
+animate()
 
 </script>
+
 </body>
 </html>
