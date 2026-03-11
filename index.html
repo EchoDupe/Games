@@ -1,236 +1,125 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>EchoDupe Game V6.4</title>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+    <title>EchoDupe | OS Hub</title>
     <style>
-        body { margin: 0; overflow: hidden; font-family: 'Courier New', Courier, monospace; background: #000; }
-        #menu-overlay {
-            position: absolute; width: 100%; height: 100%;
-            background: radial-gradient(circle, #001a1a, #000);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 100; color: #00ffff; text-align: center;
+        :root { --neon: #00ffff; --bg: #000a0a; --dark-gray: #555555; }
+        body { 
+            background: var(--bg); color: var(--neon); 
+            font-family: 'Courier New', monospace; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            height: 100vh; margin: 0; overflow: hidden; 
         }
-        #play-btn {
-            padding: 15px 50px; font-size: 24px; font-weight: bold;
-            background: transparent; border: 2px solid #00ffff; color: #00ffff;
-            cursor: pointer; transition: 0.3s; text-transform: uppercase; letter-spacing: 5px;
+
+        /* Scanline Overlay */
+        body::before {
+            content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 200; background-size: 100% 2px, 3px 100%; pointer-events: none;
         }
-        #play-btn:hover { background: #00ffff; color: #000; box-shadow: 0 0 30px #00ffff; }
-        #ui {
-            position: absolute; top: 20px; left: 20px;
-            color: #00ffff; background: rgba(0,20,20,0.8);
-            padding: 20px; border: 1px solid #00ffff; display: none;
-            box-shadow: 0 0 15px rgba(0,255,255,0.2); pointer-events: none;
+
+        .container { 
+            border: 1px solid var(--neon); padding: 40px; 
+            background: rgba(0, 10, 10, 0.9); 
+            box-shadow: inset 0 0 20px rgba(0, 255, 255, 0.2), 0 0 30px rgba(0, 255, 255, 0.1); 
+            text-align: center; max-width: 700px; z-index: 10;
         }
-        #minimap-container {
-            position: absolute; bottom: 20px; right: 20px;
-            width: 150px; height: 150px;
-            background: rgba(0, 10, 10, 0.8);
-            border: 2px solid #00ffff; border-radius: 5px;
-            display: none; overflow: hidden;
+
+        #title-img {
+            width: 100%; max-width: 550px; height: auto;
+            margin-bottom: 20px; filter: drop-shadow(0 0 10px var(--neon));
+            animation: flicker 4s infinite;
         }
-        #minimap-canvas { width: 100%; height: 100%; }
-        #shop-gui, #settings-gui {
-            display: none; position: absolute; left: 50%; top: 50%;
-            transform: translate(-50%, -50%); width: 350px;
-            background: #050505; color: #00ffff; padding: 30px;
-            border: 2px solid #00ffff; text-align: center;
-            box-shadow: 0 0 50px rgba(0,255,255,0.4); z-index: 101;
+
+        @keyframes flicker {
+            0% { opacity: 0.95; } 5% { opacity: 0.8; } 10% { opacity: 1; }
+            70% { opacity: 0.9; } 72% { opacity: 0.2; } 73% { opacity: 0.9; }
+            100% { opacity: 1; }
         }
-        .btn {
-            background: #002222; color: #00ffff; border: 1px solid #00ffff;
-            padding: 12px; width: 100%; margin-top: 10px;
-            cursor: pointer; font-weight: bold; transition: 0.2s;
+
+        .status { font-size: 0.9em; color: #008888; margin-bottom: 30px; letter-spacing: 2px; }
+        
+        .menu { display: grid; gap: 15px; width: 100%; }
+        
+        .game-link {
+            text-decoration: none; color: var(--neon); border: 1px solid var(--neon);
+            padding: 15px; transition: 0.2s; font-weight: bold; 
+            text-transform: uppercase; letter-spacing: 3px;
+            cursor: pointer;
         }
-        .btn:hover:not(:disabled) { background: #00ffff; color: #000; }
-        .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        .game-link:hover { 
+            background: var(--neon); color: #000; 
+            box-shadow: 0 0 25px var(--neon); 
+        }
+
+        /* Footer Style */
+        .footer { margin-top: 40px; font-size: 0.8em; letter-spacing: 1px; }
+        .footer span { color: var(--dark-gray); }
+        .footer b { color: var(--neon); text-shadow: 0 0 5px var(--neon); }
+
+        /* Loading Overlay */
+        #loader {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 300; flex-direction: column;
+            align-items: center; justify-content: center;
+        }
     </style>
 </head>
 <body>
 
-<div id="menu-overlay">
-    <h1 style="font-size: 50px; text-shadow: 0 0 20px #00ffff;">ECHODUPE V6.4</h1>
-    <p>FOG HARVEST UPDATE</p><br>
-    <button id="play-btn" onclick="startGame()">INITIALIZE</button>
-</div>
-
-<div id="ui">
-    <span style="font-size: 12px;">CAPITAL</span><br>
-    <span style="font-size: 32px; font-weight: bold;">$<span id="money">0</span></span><br>
-    <div style="margin-top:10px; font-size: 13px; border-top: 1px solid #004444; padding-top: 5px;">
-        WORKERS: <span id="workerCount">0</span> | REBIRTHS: <span id="rebirthCount">0</span><br>
-        MULTI: <span id="uiMult">1.0</span>x
+<div id="loader">
+    <div id="load-text" style="font-size: 1.5em; margin-bottom: 20px;">DECRYPTING_SIMULATION...</div>
+    <div style="width: 300px; height: 10px; border: 1px solid var(--neon);">
+        <div id="bar" style="width: 0%; height: 100%; background: var(--neon);"></div>
     </div>
 </div>
 
-<div id="minimap-container"><canvas id="minimap-canvas"></canvas></div>
+<div class="container">
+    <img src="assets/title.png" id="title-img" alt="ECHODUPE NETWORK">
+    
+    <div class="status" id="status-text">SYSTEM_LINK: ESTABLISHED... ACCESS_GRANTED</div>
 
-<div id="shop-gui">
-    <h2 style="margin:0;">TERMINAL</h2>
-    <hr style="border:0; border-top:1px solid #00ffff; margin:15px 0; opacity:0.3;">
-    <button class="btn" onclick="buyWorker()">HIRE NPC: $<span id="wP">25</span></button>
-    <button class="btn" onclick="buyBoost()">UPGRADE TOOLS: $<span id="bP">100</span></button>
-    <button class="btn" id="rebirth-btn" onclick="doRebirth()" style="border-color:#ff00ff; color:#ff00ff;">REBIRTH: $5000</button>
-    <button class="btn" onclick="openSettings()" style="background:#222; margin-top:15px;">SETTINGS</button>
-    <button class="btn" onclick="closeGui('shop-gui')" style="margin-top:10px; border:none; background:#440000; color:white;">EXIT</button>
-</div>
+    <div class="menu">
+        <div onclick="boot('v6-5/index.html')" class="game-link">Boot Simulation V6.5</div>
+        <div onclick="boot('v6-4/index.html')" class="game-link">Boot Simulation V6.4</div>
+    </div>
 
-<div id="settings-gui">
-    <h2 style="margin:0;">SETTINGS</h2>
-    <hr style="border:0; border-top:1px solid #00ffff; margin:15px 0; opacity:0.3;">
-    <button class="btn" id="audioToggle" onclick="toggleAudio()">SOUNDS: ON</button>
-    <button class="btn" onclick="wipeSave()" style="border-color:#ff4444; color:#ff4444; margin-top:20px;">WIPE DATA</button>
-    <button class="btn" onclick="closeGui('settings-gui')" style="margin-top:20px;">BACK</button>
+    <div class="footer">
+        <span>DEVELOPED AND DESIGNED BY </span><b>SKITXOE</b>
+    </div>
 </div>
 
 <script>
-let audioEnabled = true;
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-let stats = { money: 25, workers: 0, mult: 1, wPrice: 25, bPrice: 100, rebirths: 0 };
-let gameStarted = false;
-let workerNPCs = [];
-
-function playSound(freq, type, duration, vol) {
-    if(!audioEnabled) return;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = type;
-    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-    gain.gain.setValueAtTime(vol, audioCtx.currentTime);
-    gain.connect(audioCtx.destination);
-    osc.connect(gain);
-    osc.start(); osc.stop(audioCtx.currentTime + duration);
-}
-
-// Scene Setup with Fog
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x000505);
-scene.fog = new THREE.FogExp2(0x001111, 0.035); // Added Atmosphere
-
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
-
-const ambient = new THREE.AmbientLight(0x404040, 2); scene.add(ambient);
-const light = new THREE.PointLight(0x00ffff, 2, 50); light.position.set(0, 8, -25); scene.add(light);
-
-const ground = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.MeshStandardMaterial({color: 0x050505}));
-ground.rotation.x = -Math.PI/2; scene.add(ground);
-const grid = new THREE.GridHelper(500, 50, 0x00ffff, 0x001111);
-grid.position.y = 0.05; scene.add(grid);
-
-function createInteriorShop() {
-    const shop = new THREE.Group();
-    const woodMat = new THREE.MeshStandardMaterial({color: 0x3d2b1f});
-    for(let y=0; y<9; y++) {
-        const logB = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 12), woodMat);
-        logB.rotation.z = Math.PI/2; logB.position.set(0, y*0.9, -5); shop.add(logB);
-        const logL = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 10), woodMat);
-        logL.rotation.x = Math.PI/2; logL.position.set(-6, y*0.9, 0); shop.add(logL);
-        const logR = logL.clone(); logR.position.x = 6; shop.add(logR);
-        if(y > 5) {
-            const logF = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 12), woodMat);
-            logF.rotation.z = Math.PI/2; logF.position.set(0, y*0.9, 5); shop.add(logF);
+    const status = document.getElementById('status-text');
+    const text = status.innerText;
+    status.innerText = '';
+    let i = 0;
+    function type() {
+        if (i < text.length) {
+            status.innerText += text.charAt(i);
+            i++;
+            setTimeout(type, 40);
         }
     }
-    const counter = new THREE.Mesh(new THREE.BoxGeometry(6, 2, 2), new THREE.MeshStandardMaterial({color: 0x111111, emissive: 0x00ffff, emissiveIntensity: 0.2}));
-    counter.position.set(0, 1, -3); shop.add(counter);
-    const roof = new THREE.Mesh(new THREE.ConeGeometry(10, 5, 4), new THREE.MeshStandardMaterial({color: 0x111111}));
-    roof.position.y = 10.5; roof.rotation.y = Math.PI/4; shop.add(roof);
-    shop.position.set(0, 0, -25); scene.add(shop);
-}
-createInteriorShop();
+    type();
 
-let trees = [];
-for(let i=0; i<80; i++) {
-    const tree = new THREE.Group();
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 3), new THREE.MeshStandardMaterial({color: 0x221100}));
-    const leaves = new THREE.Mesh(new THREE.ConeGeometry(2, 5, 6), new THREE.MeshStandardMaterial({color: 0x003333, emissive: 0x001111}));
-    leaves.position.y = 3; tree.add(trunk, leaves);
-    let rx = (Math.random()-0.5)*300; let rz = (Math.random()-0.5)*300;
-    if(Math.abs(rx) < 15 && rz < -15) rx += 25;
-    tree.position.set(rx, 0, rz); scene.add(tree);
-    trees.push({obj: tree, x: rx, z: rz});
-}
-
-function buyWorker() { if(stats.money >= stats.wPrice) { stats.money -= stats.wPrice; stats.workers++; stats.wPrice = Math.floor(stats.wPrice * 1.3); spawnHumanNPC(); playSound(440, 'sine', 0.2, 0.1); save(); } }
-function buyBoost() { if(stats.money >= stats.bPrice) { stats.money -= stats.bPrice; stats.mult += 0.5; stats.bPrice = Math.floor(stats.bPrice * 2); playSound(660, 'square', 0.1, 0.1); save(); } }
-function doRebirth() { if(stats.money >= 5000) { stats.rebirths++; stats.money = 25; stats.workers = 0; stats.wPrice = 25; stats.bPrice = 100; stats.mult = 1 + stats.rebirths; workerNPCs.forEach(n => scene.remove(n.mesh)); workerNPCs = []; playSound(880, 'sawtooth', 0.5, 0.1); save(); closeGui('shop-gui'); } }
-
-function startGame() { if(audioCtx.state === 'suspended') audioCtx.resume(); load(); gameStarted = true; document.getElementById("menu-overlay").style.display = "none"; document.getElementById("ui").style.display = "block"; document.getElementById("minimap-container").style.display = "block"; document.body.requestPointerLock(); }
-function closeGui(id) { document.getElementById(id).style.display = "none"; document.body.requestPointerLock(); }
-function openSettings() { document.getElementById("shop-gui").style.display = "none"; document.getElementById("settings-gui").style.display = "block"; }
-function toggleAudio() { audioEnabled = !audioEnabled; document.getElementById("audioToggle").innerText = "SOUNDS: " + (audioEnabled ? "ON" : "OFF"); }
-function wipeSave() { if(confirm("WIPE DATA?")) { localStorage.clear(); location.reload(); } }
-function save() { localStorage.setItem('EchoDupeV6_Save', JSON.stringify(stats)); }
-function load() { const s = localStorage.getItem('EchoDupeV6_Save'); if(s) { stats = JSON.parse(s); for(let i=0; i<stats.workers; i++) spawnHumanNPC(); } }
-
-function spawnHumanNPC() {
-    const group = new THREE.Group();
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.3), new THREE.MeshStandardMaterial({color: 0xdbac82})); head.position.y = 1.6;
-    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.3, 0.7), new THREE.MeshStandardMaterial({color: 0x004444})); body.position.y = 0.9;
-    group.add(head, body); group.position.set((Math.random()-0.5)*60, 0, (Math.random()-0.5)*60); scene.add(group);
-    workerNPCs.push({ mesh: group, tx: (Math.random()-0.5)*200, tz: (Math.random()-0.5)*200 });
-}
-
-let player = { x:0, z:10, yaw:0 };
-let keys = {};
-document.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
-document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
-document.addEventListener("mousemove", e => { if(document.pointerLockElement === document.body) player.yaw -= e.movementX * 0.002; camera.rotation.set(0, player.yaw, 0); });
-document.addEventListener("mousedown", () => { if(!gameStarted) return; if(Math.sqrt(player.x**2 + (player.z + 28)**2) < 6) { document.exitPointerLock(); document.getElementById("shop-gui").style.display = "block"; } });
-
-const mapCanvas = document.getElementById("minimap-canvas");
-const mapCtx = mapCanvas.getContext("2d");
-function drawMinimap() {
-    mapCtx.fillStyle = "#000"; mapCtx.fillRect(0, 0, 150, 150);
-    const scale = 0.5; const c = 75;
-    workerNPCs.forEach(n => { mapCtx.fillStyle = "yellow"; mapCtx.beginPath(); mapCtx.arc(c + n.mesh.position.x*scale, c + n.mesh.position.z*scale, 2, 0, 7); mapCtx.fill(); });
-    mapCtx.save(); mapCtx.translate(c + player.x*scale, c + player.z*scale); mapCtx.rotate(player.yaw + Math.PI); mapCtx.fillStyle = "#00ffff";
-    mapCtx.beginPath(); mapCtx.moveTo(0,-5); mapCtx.lineTo(4,5); mapCtx.lineTo(-4,5); mapCtx.fill(); mapCtx.restore();
-}
-
-function update() {
-    if(!gameStarted) return;
-    let speed = keys["shift"] ? 0.7 : 0.3;
-    if(keys["w"]) { player.x -= Math.sin(player.yaw) * speed; player.z -= Math.cos(player.yaw) * speed; }
-    if(keys["s"]) { player.x += Math.sin(player.yaw) * speed; player.z += Math.cos(player.yaw) * speed; }
-    if(keys["a"]) { player.x -= Math.cos(player.yaw) * speed; player.z += Math.sin(player.yaw) * speed; }
-    if(keys["d"]) { player.x += Math.cos(player.yaw) * speed; player.z -= Math.sin(player.yaw) * speed; }
-    
-    if(player.z < -20 && player.z > -30 && Math.abs(player.x) > 5) player.x = player.x > 0 ? 5 : -5;
-    camera.position.set(player.x, 3.5, player.z);
-
-    trees.forEach(t => {
-        if(Math.sqrt((player.x - t.x)**2 + (player.z - t.z)**2) < 3.5) {
-            let gain = 15 * stats.mult; stats.money += gain;
-            t.obj.position.set((Math.random()-0.5)*300, 0, (Math.random()-0.5)*300);
-            t.x = t.obj.position.x; t.z = t.obj.position.z;
-            playSound(1200, 'sine', 0.05, 0.05); save();
-        }
-    });
-
-    workerNPCs.forEach(n => {
-        let dx = n.tx - n.mesh.position.x; let dz = n.tz - n.mesh.position.z;
-        let dist = Math.sqrt(dx*dx+dz*dz);
-        if(dist > 1) { n.mesh.position.x += (dx/dist)*0.15; n.mesh.position.z += (dz/dist)*0.15; n.mesh.lookAt(n.tx, 0, n.tz); }
-        else { n.tx = (Math.random()-0.5)*200; n.tz = (Math.random()-0.5)*200; }
-        stats.money += (0.05 * stats.mult);
-    });
-
-    drawMinimap();
-    document.getElementById("money").innerText = Math.floor(stats.money);
-    document.getElementById("workerCount").innerText = stats.workers;
-    document.getElementById("rebirthCount").innerText = stats.rebirths;
-    document.getElementById("uiMult").innerText = stats.mult.toFixed(1);
-    document.getElementById("wP").innerText = stats.wPrice;
-    document.getElementById("bP").innerText = stats.bPrice;
-}
-
-function animate() { update(); renderer.render(scene, camera); requestAnimationFrame(animate); }
-animate();
+    function boot(url) {
+        document.getElementById('loader').style.display = 'flex';
+        let width = 0;
+        const bar = document.getElementById('bar');
+        const interval = setInterval(() => {
+            if (width >= 100) {
+                clearInterval(interval);
+                window.location.href = url;
+            } else {
+                width += Math.random() * 15;
+                if (width > 100) width = 100;
+                bar.style.width = width + '%';
+            }
+        }, 150);
+    }
 </script>
+
 </body>
 </html>
