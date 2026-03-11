@@ -12,15 +12,16 @@
             position: absolute; top: 20px; left: 20px;
             background: rgba(0,0,0,0.7); padding: 15px 25px; 
             border-radius: 15px; border-left: 5px solid var(--neon); z-index: 10;
-            backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px); pointer-events: none; /* Let clicks pass through to game */
         }
 
         .menu-gui {
             display: none; position: fixed; left: 50%; top: 50%;
             transform: translate(-50%, -50%); width: 350px;
             background: #fff; color: #222; border-radius: 20px;
-            padding: 30px; z-index: 1000; text-align: center;
+            padding: 30px; z-index: 2000; text-align: center;
             box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            pointer-events: auto; /* IMPORTANT: Makes buttons clickable */
         }
 
         .setting-row { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; font-weight: bold; }
@@ -29,11 +30,10 @@
             width: 100%; padding: 12px; margin: 8px 0;
             background: #eee; border: none; border-radius: 10px;
             color: #333; cursor: pointer; font-weight: bold; transition: 0.2s;
+            display: block;
         }
         .btn:hover { background: var(--neon); color: black; }
         
-        input[type=range] { width: 100px; cursor: pointer; }
-
         #crosshair {
             position: fixed; top: 50%; left: 50%;
             width: 8px; height: 8px; background: rgba(255,255,255,0.5);
@@ -49,30 +49,23 @@
 <div id="ui">
     <div style="font-size: 0.7em; letter-spacing: 2px; opacity: 0.8;">BALANCE</div>
     <div style="font-size: 2.2em; font-weight: 900; color: var(--neon);">$<span id="money">0</span></div>
-    <div style="font-size: 0.7em; margin-top: 5px;">[E] OPEN SHOP | [P] SETTINGS</div>
+    <div style="font-size: 0.7em; margin-top: 5px; color: #fff;">[E] OPEN SHOP | [P] SETTINGS</div>
 </div>
 
 <div id="store-gui" class="menu-gui">
     <h2 style="margin:0 0 10px 0; color:#2e7d32;">VILLAGE SHOP</h2>
-    <p style="font-size: 0.8em; color:#666;">Stand near the house to use this!</p>
-    <div class="btn" onclick="buyWorker()">HIRE DRONE ($<span id="w-cost">25</span>)</div>
-    <div class="btn" onclick="doRebirth()" style="color: #b8860b; border: 1px solid #b8860b;">REBIRTH ($5,000)</div>
-    <button class="btn" onclick="closeMenus()" style="background:#333; color:white;">EXIT</button>
+    <p style="font-size: 0.8em; color:#666;">Stand near the brown house to buy!</p>
+    <button class="btn" onclick="buyWorker()">HIRE DRONE ($<span id="w-cost">25</span>)</button>
+    <button class="btn" onclick="doRebirth()" style="color: #b8860b; border: 1px solid #b8860b;">REBIRTH ($5,000)</button>
+    <button class="btn" onclick="closeMenus()" style="background:#333; color:white; margin-top: 15px;">BACK TO GAME</button>
 </div>
 
 <div id="settings-gui" class="menu-gui">
     <h2 style="margin-top:0;">GAME SETTINGS</h2>
-    
     <div class="setting-row">
         <span>Sensitivity</span>
         <input type="range" id="sens-slider" min="1" max="10" value="3" oninput="updateSens(this.value)">
     </div>
-
-    <div class="setting-row">
-        <span>SFX Volume</span>
-        <input type="range" id="vol-slider" min="0" max="100" value="50">
-    </div>
-
     <div class="btn" onclick="resetGame()" style="color:red; background:rgba(255,0,0,0.1);">HARD RESET DATA</div>
     <button class="btn" onclick="closeMenus()" style="background:#333; color:white;">BACK TO GAME</button>
 </div>
@@ -82,7 +75,9 @@
 
 <script>
     function closeMenus() {
-        document.querySelectorAll('.menu-gui').forEach(m => m.style.display = 'none');
+        document.getElementById('store-gui').style.display = 'none';
+        document.getElementById('settings-gui').style.display = 'none';
+        // Only request lock when explicitly closing via button
         document.body.requestPointerLock();
     }
 </script>
