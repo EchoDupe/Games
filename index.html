@@ -39,26 +39,46 @@
             background-size: 100% 4px; position: fixed; pointer-events: none; z-index: 100;
         }
 
-        /* Centered Professional Card */
+        /* THE BORDER GLOW CONTAINER */
         .info-card { 
-            background: rgba(10, 10, 15, 0.8); 
-            backdrop-filter: blur(25px); 
-            border: 1px solid rgba(6, 182, 212, 0.1);
             position: relative;
-            overflow: hidden;
-            box-shadow: 0 0 50px rgba(0,0,0,0.5);
-        }
-        
-        .glow-border {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 2px;
-            background: linear-gradient(90deg, transparent, var(--neon), transparent);
-            animation: border-slide 4s infinite linear;
+            width: 100%;
+            max-width: 500px;
+            background: rgba(10, 10, 15, 0.9); 
+            border-radius: 50px;
+            overflow: hidden; 
+            padding: 2px; /* This defines the thickness of the glow border */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
         }
 
-        @keyframes border-slide {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
+        /* The rotating light beam behind the content */
+        .info-card::before {
+            content: '';
+            position: absolute;
+            width: 150%;
+            height: 150%;
+            background-image: conic-gradient(transparent, transparent, transparent, var(--neon));
+            animation: rotate-border 4s linear infinite;
+        }
+
+        /* The inner content box that masks the center of the spinning light */
+        .info-card-inner {
+            background: #08080a;
+            width: 100%;
+            height: 100%;
+            border-radius: 48px;
+            padding: 3rem;
+            z-index: 1;
+            text-align: center;
+            backdrop-filter: blur(25px);
+        }
+
+        @keyframes rotate-border {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -69,11 +89,10 @@
     <div class="scanline"></div>
 
     <nav class="w-full bg-black/40 border-b border-cyan-500/10 backdrop-blur-xl mb-12">
-        <div class="max-w-7xl mx-auto flex justify-between items-center px-10 py-8">
-            <h1 class="text-3xl font-black italic text-cyan-500 tracking-tighter uppercase select-none">
+        <div class="max-w-7xl mx-auto flex justify-center items-center px-10 py-8">
+            <h1 class="text-4xl font-black italic text-cyan-500 tracking-tighter uppercase select-none">
                 ECHODUPE<span class="text-white">GAMES</span>
             </h1>
-            <div class="text-[10px] font-bold text-zinc-500 tracking-widest uppercase italic">System_Ver: <span class="text-cyan-500">2.0.6-BETA</span></div>
         </div>
     </nav>
 
@@ -83,30 +102,37 @@
             <img src="assets/title.png" alt="ECHODUPE" class="max-w-[320px] w-full h-auto drop-shadow-[0_0_30px_rgba(6,182,212,0.2)] mx-auto mb-6">
         </div>
 
-        <div class="info-card p-12 rounded-[50px] text-center w-full max-w-lg">
-            <div class="glow-border"></div>
-            
-            <div class="mb-6 flex justify-center">
-                <div class="w-16 h-16 rounded-2xl bg-cyan-500/5 border border-cyan-500/20 flex items-center justify-center">
-                    <i class="fa-solid fa-microchip text-2xl text-cyan-500 animate-pulse"></i>
+        <div class="info-card">
+            <div class="info-card-inner">
+                <div class="mb-6 flex justify-center">
+                    <div class="w-16 h-16 rounded-2xl bg-cyan-500/5 border border-cyan-500/20 flex items-center justify-center">
+                        <i class="fa-solid fa-microchip text-2xl text-cyan-500 animate-pulse"></i>
+                    </div>
                 </div>
-            </div>
 
-            <h3 class="text-3xl font-black uppercase italic text-white tracking-tight">COMING SOON!</h3>
-            <p class="text-cyan-500 mt-3 text-xs font-black tracking-[0.3em] uppercase">Deployment in progress</p>
-            
-            <div class="mt-8 pt-8 border-t border-white/5">
-                <p class="text-zinc-500 text-[11px] font-bold uppercase tracking-[0.15em] leading-relaxed">
-                    Our neural gaming environment is currently undergoing <span class="text-zinc-300">System Calibration</span>. 
-                    Prepare for a high-fidelity simulation experience.
-                </p>
-                <p class="text-cyan-500/80 mt-6 text-[10px] font-black tracking-widest uppercase italic">
-                    Get ready to roll
-                </p>
+                <h3 class="text-3xl font-black uppercase italic text-white tracking-tight">COMING SOON!</h3>
+                <p class="text-cyan-500 mt-3 text-xs font-black tracking-[0.3em] uppercase">Deployment in progress</p>
+                
+                <div class="mt-8 pt-8 border-t border-white/5">
+                    <p class="text-zinc-500 text-[11px] font-bold uppercase tracking-[0.15em] leading-relaxed">
+                        Our neural gaming environment is currently undergoing <span class="text-zinc-300">System Calibration</span>. 
+                        Prepare for a high-fidelity simulation experience.
+                    </p>
+                    <p class="text-cyan-500/80 mt-6 text-[10px] font-black tracking-widest uppercase italic">
+                        Get ready to roll
+                    </p>
+                </div>
             </div>
         </div>
 
     </main>
+
+    <div class="fixed bottom-8 left-10 z-[60]">
+        <div class="flex flex-col">
+            <span class="text-[8px] font-black text-zinc-600 tracking-[0.3em] uppercase leading-none mb-1">Build_Registry</span>
+            <span class="text-[10px] font-bold text-zinc-400 uppercase italic tracking-wider">v2.0.6-BETA</span>
+        </div>
+    </div>
 
     <div class="fixed bottom-6 right-6 z-[60]">
         <a href="https://echodupe-hub.netlify.app" 
@@ -116,6 +142,7 @@
                 <span class="text-[8px] font-black text-zinc-500 tracking-[0.2em] uppercase leading-none">External_Portal</span>
                 <span class="text-[10px] font-bold text-white group-hover:text-cyan-400 transition-colors uppercase italic">EchoDupe_Hub</span>
             </div>
+            
             <div class="w-8 h-8 rounded-full border border-cyan-500/20 flex items-center justify-center group-hover:bg-cyan-500/10 transition-all">
                 <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-cyan-500"></i>
             </div>
