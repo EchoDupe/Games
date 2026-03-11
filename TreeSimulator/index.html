@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>EchoDupe | TreeSimulator</title>
+    <link rel="icon" type="image/png" href="../assets/title.png">
+    <style>
+        :root { --neon: #00ffff; }
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #000; }
+        
+        #hub-btn {
+            position: absolute; top: 20px; right: 20px;
+            padding: 10px 20px; background: rgba(0,0,0,0.8);
+            color: var(--neon); border: 1px solid var(--neon);
+            text-decoration: none; font-weight: bold; z-index: 500;
+        }
+
+        #ui {
+            position: absolute; top: 20px; left: 20px;
+            color: white; background: rgba(0,0,0,0.6);
+            padding: 20px; border-radius: 10px; border-left: 5px solid var(--neon);
+            z-index: 10; pointer-events: none;
+        }
+
+        #store-btn {
+            position: absolute; bottom: 20px; left: 20px;
+            padding: 15px 30px; background: var(--neon); color: black;
+            border: none; font-weight: bold; cursor: pointer; z-index: 10;
+        }
+
+        #store-gui {
+            display: none; position: fixed; right: 0; top: 0; width: 300px; height: 100%;
+            background: rgba(0, 10, 10, 0.95); border-left: 2px solid var(--neon);
+            color: white; padding: 40px 20px; z-index: 600;
+        }
+
+        .store-item {
+            background: rgba(255,255,255,0.1); padding: 15px;
+            margin-bottom: 10px; border-radius: 5px; cursor: pointer;
+        }
+        .store-item:hover { background: rgba(0,255,255,0.2); }
+    </style>
+</head>
+<body>
+
+<a href="../index.html" id="hub-btn">BACK TO HUB</a>
+
+<div id="ui">
+    <div style="font-size: 0.8em; opacity: 0.7;">TOTAL_CAPITAL</div>
+    <div style="font-size: 2.2em; font-weight: bold;">$<span id="money">0</span></div>
+</div>
+
+<button id="store-btn" onclick="toggleStore(true)">OPEN_STORE</button>
+
+<div id="store-gui">
+    <button onclick="toggleStore(false)" style="float:right;">X</button>
+    <h2 style="color:var(--neon)">STORE</h2>
+    <div class="store-item" onclick="buyWorker()">
+        <strong>Hire Lumberjack</strong><br>
+        Cost: $<span id="worker-cost">25</span>
+    </div>
+    <div class="store-item" onclick="buyAxe()">
+        <strong>Upgrade Axe</strong><br>
+        Cost: $<span id="axe-cost">100</span>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+<script src="game.js"></script>
+
+<script>
+    function toggleStore(show) {
+        document.getElementById('store-gui').style.display = show ? 'block' : 'none';
+        if (show) document.exitPointerLock();
+    }
+</script>
+
+</body>
+</html>
