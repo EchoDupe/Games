@@ -2,7 +2,7 @@
 
 The central terminal for all EchoDupe simulations and game environments.
 
-**Live Site:** [https://echodupe.github.io/hub/](https://echodupe.github.io/hub/)
+**Live Site:** [https://echodupe.github.io/hub/](https://echodupe.github.io/Games/)
 
 ---
 
