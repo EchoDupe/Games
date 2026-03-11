@@ -1,139 +1,132 @@
-let stats = { money: 0, mult: 1, workers: 0, wPrice: 25, aPrice: 100 };
-let workerModels = [];
+let stats = { money: 0, mult: 5, rebirths: 0, workers: 0, wPrice: 25, aPrice: 100 };
+let bots = [];
 
-// 1. Scene Setup
+// 1. Scene & Space Sky
 const scene = new THREE.Scene();
-// Space Sky: Black with Stars
-scene.background = new THREE.Color(0x000205);
-for (let i = 0; i < 1000; i++) {
-    const star = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-    star.position.set((Math.random() - 0.5) * 400, (Math.random()) * 200, (Math.random() - 0.5) * 400);
-    scene.add(star);
-}
+scene.background = new THREE.Color(0x000105);
+scene.fog = new THREE.FogExp2(0x000105, 0.008);
 
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+// Starfield
+const starGeo = new THREE.BufferGeometry();
+const starCoords = [];
+for(let i=0; i<2000; i++) {
+    starCoords.push((Math.random()-0.5)*600, (Math.random()-0.5)*600, (Math.random()-0.5)*600);
+}
+starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starCoords, 3));
+scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({color: 0xffffff, size: 0.5})));
+
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// 2. Lighting (Neon Glow)
-scene.add(new THREE.AmbientLight(0x404040, 1));
-const moonLight = new THREE.DirectionalLight(0x00ffff, 0.5);
-moonLight.position.set(10, 50, 10);
-scene.add(moonLight);
-
-// 3. Environment & Borders
+// 2. Realistic Ground & Borders
 const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(200, 200),
-    new THREE.MeshStandardMaterial({ color: 0x051a05 })
+    new THREE.PlaneGeometry(250, 250),
+    new THREE.MeshStandardMaterial({ color: 0x0a1a0a, roughness: 0.8 })
 );
-ground.rotation.x = -Math.PI / 2;
+ground.rotation.x = -Math.PI/2;
 scene.add(ground);
 
-// Fence Border
-function createFence(x, z, w, d) {
-    const f = new THREE.Mesh(new THREE.BoxGeometry(w, 2, d), new THREE.MeshStandardMaterial({ color: 0x222222 }));
-    f.position.set(x, 1, z);
-    scene.add(f);
+// Border Fence
+const fenceMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
+function makeWall(x, z, w, d) {
+    const wall = new THREE.Mesh(new THREE.BoxGeometry(w, 4, d), fenceMat);
+    wall.position.set(x, 2, z); scene.add(wall);
 }
-createFence(0, 100, 200, 1); createFence(0, -100, 200, 1);
-createFence(100, 0, 1, 200); createFence(-100, 0, 1, 200);
+makeWall(0, 125, 250, 1); makeWall(0, -125, 250, 1);
+makeWall(125, 0, 1, 250); makeWall(-125, 0, 1, 250);
 
-// 4. The Shop Building
+// 3. The Shop Building
 const shop = new THREE.Group();
-const walls = new THREE.Mesh(new THREE.BoxGeometry(10, 6, 10), new THREE.MeshStandardMaterial({ color: 0x111111, side: THREE.DoubleSide }));
-const roof = new THREE.Mesh(new THREE.BoxGeometry(11, 1, 11), new THREE.MeshStandardMaterial({ color: 0x00ffff }));
-roof.position.y = 3.5;
-shop.add(walls, roof);
-shop.position.set(0, 3, -20);
-scene.add(shop);
+const building = new THREE.Mesh(new THREE.BoxGeometry(12, 8, 12), new THREE.MeshStandardMaterial({color: 0x111111}));
+const glow = new THREE.Mesh(new THREE.BoxGeometry(12.2, 0.5, 12.2), new THREE.MeshBasicMaterial({color: 0x00ffff}));
+glow.position.y = 4; shop.add(building, glow);
+shop.position.set(0, 4, -40); scene.add(shop);
 
-// Shop NPC (The Merchant)
-const merchant = new THREE.Mesh(new THREE.CapsuleGeometry(0.4, 1), new THREE.MeshStandardMaterial({ color: 0x00ffff }));
-merchant.position.set(0, 1, -20);
-scene.add(merchant);
+// 4. Lighting
+scene.add(new THREE.AmbientLight(0xffffff, 0.3));
+const pointLight = new THREE.PointLight(0x00ffff, 2, 50);
+pointLight.position.set(0, 10, -40); scene.add(pointLight);
 
 // 5. Trees & Workers
 function createTree(x, z) {
     const g = new THREE.Group();
-    const t = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.4, 3), new THREE.MeshStandardMaterial({ color: 0x1a0a00 }));
-    const l = new THREE.Mesh(new THREE.ConeGeometry(2, 5, 6), new THREE.MeshStandardMaterial({ color: 0x003300, emissive: 0x001100 }));
-    l.position.y = 3.5; g.add(t, l);
+    const t = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.6, 4), new THREE.MeshStandardMaterial({color: 0x221100}));
+    const l = new THREE.Mesh(new THREE.ConeGeometry(2.5, 6, 8), new THREE.MeshStandardMaterial({color: 0x0a2a0a}));
+    l.position.y = 4; g.add(t, l);
     g.position.set(x, 0, z); scene.add(g);
     return { obj: g, x, z };
 }
-
 let trees = [];
-for (let i = 0; i < 40; i++) trees.push(createTree((Math.random() - 0.5) * 160, (Math.random() - 0.5) * 160));
+for(let i=0; i<50; i++) trees.push(createTree((Math.random()-0.5)*200, (Math.random()-0.5)*200));
 
-function spawnWorker() {
-    const bot = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.8), new THREE.MeshStandardMaterial({ color: 0x00ffff, wireframe: true }));
-    bot.position.set((Math.random() - 0.5) * 20, 1, (Math.random() - 0.5) * 20);
-    scene.add(bot);
-    workerModels.push(bot);
+function spawnBot() {
+    const bot = new THREE.Mesh(new THREE.SphereGeometry(0.5), new THREE.MeshStandardMaterial({color: 0x00ffff, wireframe: true}));
+    bot.position.set(0, 5, 0); scene.add(bot);
+    bots.push(bot);
 }
 
-// 6. Logic & Interaction
-let player = { x: 0, z: 15, yaw: 0 };
+// 6. Controls & Interaction
+let player = { x: 0, z: 20, yaw: 0 };
 let keys = {};
 document.addEventListener("keydown", e => {
     keys[e.key.toLowerCase()] = true;
-    if (e.key.toLowerCase() === 'e') {
-        let d = Math.sqrt(player.x ** 2 + (player.z + 20) ** 2);
-        if (d < 8) window.toggleStore(true);
+    if(e.key === 'e' || e.key === 'E') {
+        if(Math.sqrt(player.x**2 + (player.z + 40)**2) < 15) document.getElementById('store-gui').style.display='block';
     }
+    if(e.key === 'k' || e.key === 'K') { player.x = 0; player.z = -25; } // Teleport
+    if(e.key === 'p' || e.key === 'P') document.getElementById('settings-gui').style.display='block';
 });
 document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
 document.addEventListener("mousemove", e => {
-    if (document.pointerLockElement === document.body) player.yaw -= e.movementX * 0.002;
-    camera.rotation.set(0, player.yaw, 0);
-});
-
-window.buyWorker = function() {
-    if (stats.money >= stats.wPrice) {
-        stats.money -= stats.wPrice;
-        stats.workers++;
-        spawnWorker();
-        stats.wPrice = Math.floor(stats.wPrice * 1.6);
-        updateUI();
+    if(document.pointerLockElement === document.body) {
+        player.yaw -= e.movementX * 0.002;
+        camera.rotation.set(0, player.yaw, 0);
     }
-}
+});
+document.body.onclick = () => { if(document.getElementById('store-gui').style.display === 'none') document.body.requestPointerLock(); };
+
+// 7. Logic functions
+window.buyWorker = function() {
+    if(stats.money >= stats.wPrice) { stats.money -= stats.wPrice; stats.workers++; spawnBot(); stats.wPrice *= 2; updateUI(); }
+};
+window.doRebirth = function() {
+    if(stats.money >= 5000) { 
+        stats.money = 0; stats.rebirths++; stats.mult = 5 + (stats.rebirths * 5); 
+        stats.workers = 0; bots.forEach(b => scene.remove(b)); bots = []; updateUI();
+    }
+};
 
 function updateUI() {
     document.getElementById('money').innerText = Math.floor(stats.money);
-    document.getElementById('worker-cost').innerText = stats.wPrice;
-    document.getElementById('worker-stat').innerText = "WORKERS: " + stats.workers;
+    document.getElementById('rebirths').innerText = stats.rebirths;
+    document.getElementById('w-cost').innerText = stats.wPrice;
 }
 
 function update() {
-    let speed = keys["shift"] ? 0.6 : 0.3;
-    if (keys["w"]) { player.x -= Math.sin(player.yaw) * speed; player.z -= Math.cos(player.yaw) * speed; }
-    if (keys["s"]) { player.x += Math.sin(player.yaw) * speed; player.z += Math.cos(player.yaw) * speed; }
+    let speed = keys["shift"] ? 0.8 : 0.4;
+    if(keys["w"]) { player.x -= Math.sin(player.yaw) * speed; player.z -= Math.cos(player.yaw) * speed; }
+    if(keys["s"]) { player.x += Math.sin(player.yaw) * speed; player.z += Math.cos(player.yaw) * speed; }
     
-    // Border Collision
-    player.x = Math.max(-98, Math.min(98, player.x));
-    player.z = Math.max(-98, Math.min(98, player.z));
+    // Border check
+    player.x = Math.max(-120, Math.min(120, player.x));
+    player.z = Math.max(-120, Math.min(120, player.z));
+    camera.position.set(player.x, 4, player.z);
 
-    camera.position.set(player.x, 3, player.z);
-
-    // Prompt logic
-    let distToShop = Math.sqrt(player.x ** 2 + (player.z + 20) ** 2);
-    document.getElementById('interaction-prompt').style.display = distToShop < 8 ? 'block' : 'none';
-
-    // Worker Movement
-    workerModels.forEach(w => {
-        w.rotation.y += 0.05;
-        w.position.x += Math.sin(Date.now() * 0.001) * 0.05;
-        stats.money += 0.005; // Passive income
-        updateUI();
-    });
-
+    // Harvest
     trees.forEach(t => {
-        if (Math.sqrt((player.x - t.x) ** 2 + (player.z - t.z) ** 2) < 3) {
+        if(Math.sqrt((player.x - t.x)**2 + (player.z - t.z)**2) < 4) {
             stats.money += stats.mult; updateUI();
-            t.x = (Math.random() - 0.5) * 160; t.z = (Math.random() - 0.5) * 160;
+            t.x = (Math.random()-0.5)*200; t.z = (Math.random()-0.5)*200;
             t.obj.position.set(t.x, 0, t.z);
         }
+    });
+
+    // Bots logic
+    bots.forEach(b => {
+        b.position.y = 5 + Math.sin(Date.now()*0.002);
+        stats.money += 0.02 * stats.mult; updateUI();
     });
 }
 
