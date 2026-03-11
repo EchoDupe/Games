@@ -38,12 +38,21 @@
             backdrop-filter: blur(16px); 
             border: 1px solid rgba(6, 182, 212, 0.1);
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            cursor: pointer;
         }
-        .game-card:hover { 
+        
+        /* Active Hover Effect */
+        .game-card.active:hover { 
             border-color: var(--neon); 
             box-shadow: 0 0 40px rgba(6, 182, 212, 0.2); 
             transform: translateY(-8px) scale(1.02); 
+            cursor: pointer;
+        }
+
+        /* Disabled Card Style */
+        .game-card.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            filter: grayscale(0.5);
         }
 
         /* Loading Screen Style */
@@ -92,10 +101,10 @@
 
         <div id="game-grid" class="flex justify-center w-full">
             
-            <div class="game-card p-10 rounded-[35px] text-center group max-w-sm w-full" onclick="boot('Snake/index.html')">
-                <span class="text-4xl mb-4 block group-hover:scale-125 transition-transform duration-500">�</span>
-                <h3 class="text-3xl font-black uppercase italic group-hover:text-cyan-500 transition">I gave up</h3>
-                <p class="text-zinc-500 mt-2 text-xs font-bold tracking-widest uppercase">Coming Soon!</p>
+            <div class="game-card disabled p-10 rounded-[35px] text-center group max-w-sm w-full">
+                <span class="text-4xl mb-4 block group-hover:grayscale-0 transition-all duration-500">🚫</span>
+                <h3 class="text-3xl font-black uppercase italic transition">I gave up</h3>
+                <p class="text-zinc-500 mt-2 text-xs font-bold tracking-widest uppercase">System Offline</p>
             </div>
 
         </div>
