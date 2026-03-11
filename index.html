@@ -23,15 +23,27 @@
             position: absolute; top: 20px; left: 20px;
             color: #00ffff; background: rgba(0,20,20,0.8);
             padding: 20px; border: 1px solid #00ffff; display: none;
-            box-shadow: 0 0 15px rgba(0,255,255,0.2);
+            box-shadow: 0 0 15px rgba(0,255,255,0.2); pointer-events: none;
         }
+        
+        /* Mini-map Styling */
+        #minimap-container {
+            position: absolute; bottom: 20px; right: 20px;
+            width: 150px; height: 150px;
+            background: rgba(0, 10, 10, 0.8);
+            border: 2px solid #00ffff; border-radius: 5px;
+            display: none; overflow: hidden;
+        }
+        #minimap-canvas { width: 100%; height: 100%; }
+
         #shop-gui {
             display: none; position: absolute; left: 50%; top: 50%;
             transform: translate(-50%, -50%); width: 350px;
             background: #050505; color: #00ffff; padding: 30px;
             border: 2px solid #00ffff; text-align: center;
-            box-shadow: 0 0 50px rgba(0,255,255,0.4);
+            box-shadow: 0 0 50px rgba(0,255,255,0.4); z-index: 101;
         }
+
         .btn {
             background: #002222; color: #00ffff; border: 1px solid #00ffff;
             padding: 12px; width: 100%; margin-top: 10px;
@@ -40,22 +52,22 @@
         .btn:hover:not(:disabled) { background: #00ffff; color: #000; }
         .btn:disabled { opacity: 0.3; cursor: not-allowed; }
         #rebirth-btn { border-color: #ff00ff; color: #ff00ff; margin-top: 20px; }
-        #rebirth-btn:hover:not(:disabled) { background: #ff00ff; color: #000; box-shadow: 0 0 20px #ff00ff;}
         
-        #msg { position: absolute; bottom: 10%; width: 100%; text-align: center; color: #00ffff; font-weight: bold; display: none; text-transform: uppercase; }
+        #msg { position: absolute; bottom: 10%; width: 100%; text-align: center; color: #00ffff; font-weight: bold; display: none; text-transform: uppercase; pointer-events: none;}
     </style>
 </head>
 <body>
 
 <div id="menu-overlay">
     <h1 style="font-size: 50px; text-shadow: 0 0 20px #00ffff;">ECHODUPE V6</h1>
-    <p>WOOD & NEON TYCOON</p><br>
-    <button id="play-btn" onclick="startGame()">Initialize</button>
+    <p style="letter-spacing: 2px;">NEON RADAR ACTIVE</p><br>
+    <button id="play-btn" onclick="startGame()">Initialize Systems</button>
 </div>
 
 <div id="ui">
     <span style="font-size: 12px;">NET WORTH</span><br>
     <span style="font-size: 32px; font-weight: bold;">$<span id="money">0</span></span><br>
+    <div style="color: #ffcc00; font-size: 10px; margin-top: 5px;">[SHIFT] UNLIMITED SPRINT</div>
     <div style="margin-top:10px; font-size: 13px; border-top: 1px solid #004444; padding-top: 5px;">
         WORKERS: <span id="workerCount">0</span><br>
         REBIRTHS: <span id="rebirthCount">0</span><br>
@@ -63,35 +75,41 @@
     </div>
 </div>
 
+<div id="minimap-container">
+    <canvas id="minimap-canvas"></canvas>
+</div>
+
 <div id="shop-gui">
     <h2 style="margin:0; letter-spacing: 3px;">SYSTEM UPGRADES</h2>
-    <hr border="1" color="#00ffff" style="margin: 15px 0; opacity: 0.3;">
-    
-    <div style="margin-bottom: 15px;">
-        <small>HIRE HUMAN NPC (+$5/sec)</small>
-        <button class="btn" id="buyWorker" onclick="buyWorker()">Contract: $25</button>
-    </div>
-    
-    <div style="margin-bottom: 15px;">
-        <small>CYAN TOOLS (+0.5x Multiplier)</small>
-        <button class="btn" id="buyBoost" onclick="buyBoost()">Upgrade: $100</button>
-    </div>
-
-    <div style="border-top: 1px solid #333; padding-top: 15px;">
-        <small style="color: #ff00ff;">RESET FOR PERMANENT 2x MULTI</small>
-        <button class="btn" id="rebirth-btn" onclick="doRebirth()">REBIRTH: $5000</button>
-    </div>
-
+    <hr style="border: 0; border-top: 1px solid #00ffff; margin: 15px 0; opacity: 0.3;">
+    <button class="btn" id="buyWorker" onclick="buyWorker()">Contract NPC: $<span id="wP">25</span></button>
+    <button class="btn" id="buyBoost" onclick="buyBoost()">Cyan Tools: $<span id="bP">100</span></button>
+    <button class="btn" id="rebirth-btn" onclick="doRebirth()">REBIRTH: $5000</button>
     <button class="btn" onclick="closeShop()" style="margin-top: 25px; border:none; background: #440000; color: white;">DISCONNECT</button>
 </div>
 
 <div id="msg">Approach the Log Cabin and Click to Open Shop</div>
 
 <script>
+// --- AUDIO SYSTEM ---
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playSound(freq, type, duration, vol) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(freq / 2, audioCtx.currentTime + duration);
+    gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + duration);
+}
+
+// --- CORE STATS ---
 let stats = { money: 25, workers: 0, mult: 1, wPrice: 25, bPrice: 100, rebirths: 0 };
 let gameStarted = false;
+let workerNPCs = [];
 
-// --- SAVE SYSTEM ---
 function save() { localStorage.setItem('EchoDupeV6_Save', JSON.stringify(stats)); }
 function load() {
     const s = localStorage.getItem('EchoDupeV6_Save');
@@ -101,7 +119,7 @@ function load() {
     }
 }
 
-// --- ENGINE ---
+// --- THREE.JS SETUP ---
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000505);
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
@@ -109,153 +127,91 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-const ambient = new THREE.AmbientLight(0x404040, 1.5); scene.add(ambient);
-const light = new THREE.PointLight(0x00ffff, 1, 100); light.position.set(0, 10, -20); scene.add(light);
+const ambient = new THREE.AmbientLight(0x404040, 2); scene.add(ambient);
+const light = new THREE.PointLight(0x00ffff, 1.5, 100); light.position.set(0, 10, -25); scene.add(light);
 
-// Ground
-const groundGeo = new THREE.PlaneGeometry(500, 500);
-const groundMat = new THREE.MeshStandardMaterial({color: 0x050505});
-const ground = new THREE.Mesh(groundGeo, groundMat);
+// World Items
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.MeshStandardMaterial({color: 0x050505}));
 ground.rotation.x = -Math.PI/2; scene.add(ground);
-
-// Grid lines for "Realistic Cyber" look
 const grid = new THREE.GridHelper(500, 50, 0x00ffff, 0x002222);
 grid.position.y = 0.05; scene.add(grid);
 
-// --- REALISTIC WOOD SHOP ---
 function createWoodShop() {
     const shop = new THREE.Group();
-    const woodMat = new THREE.MeshStandardMaterial({color: 0x3d2b1f}); // Dark wood
-    
-    // Build walls out of "Logs"
+    const woodMat = new THREE.MeshStandardMaterial({color: 0x3d2b1f});
     for(let y=0; y<8; y++) {
-        const logFront = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 12), woodMat);
-        logFront.rotation.z = Math.PI/2;
-        logFront.position.set(0, y*0.9, 5);
-        shop.add(logFront);
-        
-        const logBack = logFront.clone();
-        logBack.position.z = -5;
-        shop.add(logBack);
-
-        const logLeft = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 10), woodMat);
-        logLeft.rotation.x = Math.PI/2;
-        logLeft.position.set(-6, y*0.9, 0);
-        shop.add(logLeft);
-
-        const logRight = logLeft.clone();
-        logRight.position.x = 6;
-        shop.add(logRight);
+        const logF = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 12), woodMat);
+        logF.rotation.z = Math.PI/2; logF.position.set(0, y*0.9, 5); shop.add(logF);
+        const logB = logF.clone(); logB.position.z = -5; shop.add(logB);
+        const logL = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 10), woodMat);
+        logL.rotation.x = Math.PI/2; logL.position.set(-6, y*0.9, 0); shop.add(logL);
+        const logR = logL.clone(); logR.position.x = 6; shop.add(logR);
     }
-    
-    // Roof
     const roof = new THREE.Mesh(new THREE.ConeGeometry(9, 5, 4), new THREE.MeshStandardMaterial({color: 0x1a1a1a}));
-    roof.position.y = 10;
-    roof.rotation.y = Math.PI/4;
-    shop.add(roof);
-
-    // Cyan Neon Sign
+    roof.position.y = 10; roof.rotation.y = Math.PI/4; shop.add(roof);
     const sign = new THREE.Mesh(new THREE.BoxGeometry(4, 1, 0.2), new THREE.MeshStandardMaterial({emissive: 0x00ffff, color: 0x00ffff}));
-    sign.position.set(0, 5, 5.2);
-    shop.add(sign);
-
-    shop.position.set(0, 0, -25);
-    scene.add(shop);
+    sign.position.set(0, 5, 5.2); shop.add(sign);
+    shop.position.set(0, 0, -25); scene.add(shop);
 }
 createWoodShop();
 
-// --- HUMAN NPCs ---
-let workerNPCs = [];
+// --- NPCs ---
 function spawnHumanNPC() {
     const group = new THREE.Group();
     const skin = new THREE.MeshStandardMaterial({color: 0xdbac82});
     const clothes = new THREE.MeshStandardMaterial({color: 0x004444});
-
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.3), skin);
-    head.position.y = 1.6;
-    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.3, 0.7), clothes);
-    body.position.y = 0.9;
-    const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.8), clothes);
-    legL.position.set(-0.15, 0.4, 0);
-    const legR = legL.clone();
-    legR.position.x = 0.15;
-
-    group.add(head, body, legL, legR);
-    group.position.set((Math.random()-0.5)*20, 0, -20 + (Math.random()-0.5)*10);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.3), skin); head.position.y = 1.6;
+    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.3, 0.7), clothes); body.position.y = 0.9;
+    group.add(head, body);
+    group.position.set((Math.random()-0.5)*40, 0, (Math.random()-0.5)*40 - 20);
     scene.add(group);
-    workerNPCs.push({ 
-        mesh: group, 
-        targetX: (Math.random()-0.5)*50, 
-        targetZ: (Math.random()-0.5)*50,
-        timer: 0 
-    });
+    workerNPCs.push({ mesh: group, tx: (Math.random()-0.5)*150, tz: (Math.random()-0.5)*150 });
 }
 
-// --- TREES (CYAN PINES) ---
 let trees = [];
-for(let i=0; i<100; i++) {
+for(let i=0; i<80; i++) {
     const tree = new THREE.Group();
     const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 3), new THREE.MeshStandardMaterial({color: 0x221100}));
     const leaves = new THREE.Mesh(new THREE.ConeGeometry(2, 5, 6), new THREE.MeshStandardMaterial({color: 0x003333, emissive: 0x001111}));
-    leaves.position.y = 3;
-    tree.add(trunk, leaves);
-    let rx = (Math.random()-0.5)*200;
-    let rz = (Math.random()-0.5)*200;
+    leaves.position.y = 3; tree.add(trunk, leaves);
+    let rx = (Math.random()-0.5)*250; let rz = (Math.random()-0.5)*250;
     if(Math.abs(rx) < 15 && rz < 0) rx += 25;
-    tree.position.set(rx, 0, rz);
-    scene.add(tree);
+    tree.position.set(rx, 0, rz); scene.add(tree);
     trees.push({obj: tree, x: rx, z: rz});
 }
 
-// --- GAME FUNCTIONS ---
+// --- LOGIC ---
 function buyWorker() {
     if(stats.money >= stats.wPrice) {
-        stats.money -= stats.wPrice;
-        stats.workers++;
-        stats.wPrice = Math.floor(stats.wPrice * 1.3);
-        spawnHumanNPC();
-        save();
+        stats.money -= stats.wPrice; stats.workers++; stats.wPrice = Math.floor(stats.wPrice * 1.3);
+        spawnHumanNPC(); playSound(440, 'sine', 0.2, 0.2); save();
     }
 }
-
 function buyBoost() {
     if(stats.money >= stats.bPrice) {
-        stats.money -= stats.bPrice;
-        stats.mult += 0.5;
-        stats.bPrice = Math.floor(stats.bPrice * 2);
-        save();
+        stats.money -= stats.bPrice; stats.mult += 0.5; stats.bPrice = Math.floor(stats.bPrice * 2);
+        playSound(660, 'square', 0.2, 0.1); save();
     }
 }
-
 function doRebirth() {
     if(stats.money >= 5000) {
-        stats.rebirths++;
-        stats.money = 25;
-        stats.workers = 0;
-        stats.wPrice = 25;
-        stats.bPrice = 100;
-        stats.mult = 1 + (stats.rebirths * 1); // 2x, 3x, etc.
-        
-        workerNPCs.forEach(n => scene.remove(n.mesh));
-        workerNPCs = [];
-        save();
-        closeShop();
+        stats.rebirths++; stats.money = 25; stats.workers = 0; stats.wPrice = 25; stats.bPrice = 100;
+        stats.mult = 1 + (stats.rebirths * 1.0); 
+        workerNPCs.forEach(n => scene.remove(n.mesh)); workerNPCs = [];
+        playSound(880, 'sawtooth', 0.8, 0.2); save(); closeShop();
     }
 }
 
 function startGame() {
-    load();
-    gameStarted = true;
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    load(); gameStarted = true;
     document.getElementById("menu-overlay").style.display = "none";
     document.getElementById("ui").style.display = "block";
     document.getElementById("msg").style.display = "block";
+    document.getElementById("minimap-container").style.display = "block";
     document.body.requestPointerLock();
 }
-
-function closeShop() {
-    document.getElementById("shop-gui").style.display = "none";
-    document.body.requestPointerLock();
-}
+function closeShop() { document.getElementById("shop-gui").style.display = "none"; document.body.requestPointerLock(); }
 
 // --- CONTROLS ---
 let player = { x:0, z:10, yaw:0 };
@@ -263,78 +219,91 @@ let keys = {};
 document.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
 document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
 document.addEventListener("mousemove", e => {
-    if(document.pointerLockElement === document.body) {
-        player.yaw -= e.movementX * 0.002;
-        camera.rotation.set(0, player.yaw, 0);
+    if(document.pointerLockElement === document.body) player.yaw -= e.movementX * 0.002;
+    camera.rotation.set(0, player.yaw, 0);
+});
+document.addEventListener("mousedown", () => {
+    if(!gameStarted) return;
+    if(Math.sqrt(player.x**2 + (player.z + 25)**2) < 12) {
+        document.exitPointerLock(); document.getElementById("shop-gui").style.display = "block";
     }
 });
 
-document.addEventListener("mousedown", () => {
-    if(!gameStarted) return;
-    let d = Math.sqrt(player.x**2 + (player.z + 25)**2);
-    if(d < 12) {
-        document.exitPointerLock();
-        document.getElementById("shop-gui").style.display = "block";
-    }
-});
+// --- MINI-MAP RENDERER ---
+const mapCanvas = document.getElementById("minimap-canvas");
+const mapCtx = mapCanvas.getContext("2d");
+mapCanvas.width = 150; mapCanvas.height = 150;
+
+function drawMinimap() {
+    mapCtx.fillStyle = "black"; mapCtx.fillRect(0, 0, 150, 150);
+    const scale = 0.5; // Map zoom
+    const centerX = 75; const centerZ = 75;
+
+    // Draw Shop
+    mapCtx.fillStyle = "#3399ff";
+    mapCtx.fillRect(centerX - 3, centerZ - 25*scale - 3, 6, 6);
+
+    // Draw Workers
+    mapCtx.fillStyle = "yellow";
+    workerNPCs.forEach(npc => {
+        let x = centerX + npc.mesh.position.x * scale;
+        let z = centerZ + npc.mesh.position.z * scale;
+        mapCtx.beginPath(); mapCtx.arc(x, z, 2, 0, Math.PI*2); mapCtx.fill();
+    });
+
+    // Draw Player
+    mapCtx.save();
+    mapCtx.translate(centerX + player.x * scale, centerZ + player.z * scale);
+    mapCtx.rotate(player.yaw + Math.PI);
+    mapCtx.fillStyle = "#00ffff";
+    mapCtx.beginPath(); mapCtx.moveTo(0, -5); mapCtx.lineTo(4, 5); mapCtx.lineTo(-4, 5); mapCtx.closePath(); mapCtx.fill();
+    mapCtx.restore();
+}
 
 function update() {
     if(!gameStarted) return;
     
-    // Movement
-    let speed = 0.25;
-    if(keys["w"]) { player.x -= Math.sin(player.yaw) * speed; player.z -= Math.cos(player.yaw) * speed; }
-    if(keys["s"]) { player.x += Math.sin(player.yaw) * speed; player.z += Math.cos(player.yaw) * speed; }
-    if(keys["a"]) { player.x -= Math.cos(player.yaw) * speed; player.z += Math.sin(player.yaw) * speed; }
-    if(keys["d"]) { player.x += Math.cos(player.yaw) * speed; player.z -= Math.cos(player.yaw) * speed; }
+    let currentSpeed = keys["shift"] ? 0.65 : 0.28;
+
+    if(keys["w"]) { player.x -= Math.sin(player.yaw) * currentSpeed; player.z -= Math.cos(player.yaw) * currentSpeed; }
+    if(keys["s"]) { player.x += Math.sin(player.yaw) * currentSpeed; player.z += Math.cos(player.yaw) * currentSpeed; }
+    if(keys["a"]) { player.x -= Math.cos(player.yaw) * currentSpeed; player.z += Math.sin(player.yaw) * currentSpeed; }
+    if(keys["d"]) { player.x += Math.cos(player.yaw) * currentSpeed; player.z -= Math.sin(player.yaw) * currentSpeed; }
     camera.position.set(player.x, 3.5, player.z);
 
-    // Tree Interaction ($15 Base * Mult)
     trees.forEach(tree => {
-        let d = Math.sqrt((player.x - tree.x)**2 + (player.z - tree.z)**2);
-        if(d < 3) {
+        if(Math.sqrt((player.x - tree.x)**2 + (player.z - tree.z)**2) < 3.5) {
             stats.money += 15 * stats.mult;
-            tree.obj.position.x = (Math.random()-0.5)*200;
-            tree.obj.position.z = (Math.random()-0.5)*200;
+            tree.obj.position.x = (Math.random()-0.5)*300; tree.obj.position.z = (Math.random()-0.5)*300;
             tree.x = tree.obj.position.x; tree.z = tree.obj.position.z;
+            playSound(1200, 'sine', 0.05, 0.1); save();
         }
     });
 
-    // NPC Logic
     workerNPCs.forEach(npc => {
-        let dx = npc.targetX - npc.mesh.position.x;
-        let dz = npc.targetZ - npc.mesh.position.z;
+        let dx = npc.tx - npc.mesh.position.x; let dz = npc.tz - npc.mesh.position.z;
         let dist = Math.sqrt(dx*dx + dz*dz);
         if(dist > 1) {
-            npc.mesh.position.x += (dx/dist) * 0.1;
-            npc.mesh.position.z += (dz/dist) * 0.1;
-            npc.mesh.lookAt(npc.targetX, 0, npc.targetZ);
-        } else {
-            npc.targetX = (Math.random()-0.5)*100;
-            npc.targetZ = (Math.random()-0.5)*100;
-        }
-        stats.money += (0.05 * stats.mult); // Auto cash
+            npc.mesh.position.x += (dx/dist) * 0.14; npc.mesh.position.z += (dz/dist) * 0.14;
+            npc.mesh.lookAt(npc.tx, 0, npc.tz);
+        } else { npc.tx = (Math.random()-0.5)*200; npc.tz = (Math.random()-0.5)*200; }
+        stats.money += (0.05 * stats.mult);
     });
 
-    // Update UI
+    drawMinimap();
     document.getElementById("money").innerText = Math.floor(stats.money);
     document.getElementById("workerCount").innerText = stats.workers;
     document.getElementById("rebirthCount").innerText = stats.rebirths;
     document.getElementById("uiMult").innerText = stats.mult.toFixed(1);
-    document.getElementById("buyWorker").innerText = "Contract: $" + stats.wPrice;
-    document.getElementById("buyBoost").innerText = "Upgrade: $" + stats.bPrice;
+    document.getElementById("wP").innerText = stats.wPrice;
+    document.getElementById("bP").innerText = stats.bP || stats.bPrice;
     document.getElementById("buyWorker").disabled = stats.money < stats.wPrice;
     document.getElementById("buyBoost").disabled = stats.money < stats.bPrice;
     document.getElementById("rebirth-btn").disabled = stats.money < 5000;
 }
 
-function animate() {
-    update();
-    renderer.render(scene, camera);
-    requestAnimationFrame(animate);
-}
+function animate() { update(); renderer.render(scene, camera); requestAnimationFrame(animate); }
 animate();
-
 window.onbeforeunload = save;
 </script>
 </body>
