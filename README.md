@@ -2,7 +2,7 @@
 
 <img src="assets/title.png" width="380" alt="EchoDupe Games Logo">
 
-# 🌐 ECHODUPE | NEURAL GAMES HUB
+# 🌐 ECHODUPE | GAMES HUB
 **The central terminal for high-fidelity EchoDupe game environments.**
 
 <br>
