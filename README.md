@@ -36,7 +36,7 @@ Current nodes are restricted as we upgrade to the next generation of the **EchoD
 
 ---
 
-<img src="assets/ComingSoon.png" width="100%" alt="Coming Soon Banner">
+<img src="assets/ComingSoon.png" width="380" alt="EchoDupe Coming Soon">
 
 <br>
 
