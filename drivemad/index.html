@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Drive Mad</title>
+    <title>EchoDupe | Drive Mad</title>
     <link rel="icon" type="image/png" href="assets/title.png">
     
     <meta name="robots" content="noindex,nofollow" />
@@ -14,8 +14,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
     <link rel="stylesheet" href="webapp/fancade.css" />
     <link rel="icon" href="webapp/cover.jpg" />
+
+    <style>
+        /* HUB BUTTON STYLES */
+        #return-terminal {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 2147483647 !important;
+            background: #000;
+            border: 2px solid #06b6d4;
+            color: #06b6d4;
+            padding: 12px 20px;
+            font-family: sans-serif;
+            font-size: 12px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer !important;
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+            user-select: none;
+            transition: all 0.2s;
+        }
+        #return-terminal:hover {
+            background: #06b6d4;
+            color: #000;
+        }
+    </style>
   </head>
   <body id="body">
+    <button id="return-terminal">
+        ← EXIT_TO_HUB
+    </button>
+
     <div id="modal_parent">
       <div id="modal_content">
         <span id="modal_close_button">&times;</span>
@@ -41,8 +72,37 @@
       <div id="gradient"></div>
       <div id="webview_content"></div>
     </div>
+    
     <script type="text/javascript" src="webapp/source_min.js"></script>
     <script type="text/javascript" src="webapp/index.js"></script>
+
+    <script type="text/javascript">
+        // GLOBAL REDIRECT & TITLE LOCK SCRIPT
+        document.addEventListener('DOMContentLoaded', function() {
+            // 1. Handle the Hub Button
+            var btn = document.getElementById('return-terminal');
+            if (btn) {
+                btn.addEventListener('click', function(e) {
+                    window.location.replace("https://echodupe.github.io/Games/");
+                });
+            }
+
+            // 2. Force Branding in the Title
+            var targetTitle = "EchoDupe | Drive Mad";
+            
+            var lockTitle = function() {
+                if (document.title !== targetTitle) {
+                    document.title = targetTitle;
+                }
+            };
+
+            // Initial lock
+            lockTitle();
+
+            // Watch for changes (prevents Fancade/Drive Mad from renaming the tab)
+            var observer = new MutationObserver(lockTitle);
+            observer.observe(document.querySelector('title'), { childList: true });
+        });
+    </script>
   </body>
 </html>
-<!-- Thanks EvilMonke#0263! -->
