@@ -31,6 +31,24 @@
             z-index: -1;
         }
 
+        /* Glowing Header Text */
+        .brand-header {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 900;
+            font-size: 3.5rem;
+            letter-spacing: -0.05em;
+            text-transform: uppercase;
+            line-height: 1;
+        }
+        .brand-cyan {
+            color: var(--neon);
+            text-shadow: 0 0 20px rgba(6, 182, 212, 0.6);
+        }
+        .brand-white {
+            color: #ffffff;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+
         /* Search & Category Styles */
         #filter-interface {
             max-width: 600px;
@@ -106,7 +124,9 @@
     <div class="bg-glow"></div>
 
     <header class="pt-16 pb-8 flex flex-col items-center">
-        <img src="assets/title.png" alt="Logo" class="w-64 mb-6 drop-shadow-[0_0_15px_rgba(6,182,212,0.4)]">
+        <h1 class="brand-header mb-8">
+            <span class="brand-cyan">ECHODUPE</span><span class="brand-white">GAMES</span>
+        </h1>
         
         <div id="filter-interface">
             <div class="relative mb-6">
@@ -157,6 +177,12 @@
                     <span class="text-[8px] font-bold text-cyan-500/60 tracking-[0.1em] uppercase">Sector_05 // Sports</span>
                 </a>
 
+                <a href="monkeymart/index.html" class="game-card" data-name="monkey mart" data-category="simulators">
+                    <div class="icon-box"><img src="monkeymart/bg_loading.png" alt="Monkey Mart"></div>
+                    <span class="glitch-text text-sm text-white mb-1">MONKEY MART</span>
+                    <span class="text-[8px] font-bold text-cyan-500/60 tracking-[0.1em] uppercase">Sector_06 // Sim</span>
+                </a>
+
                 <div id="init-node" class="game-card opacity-20 grayscale cursor-not-allowed">
                     <div class="icon-box border-dashed border-zinc-700"><i class="fa-solid fa-plus text-2xl text-zinc-700"></i></div>
                     <span class="text-[10px] font-bold text-zinc-600 tracking-widest uppercase">Initializing...</span>
@@ -191,14 +217,11 @@
                 }
             });
 
-            // Hide/Show initializing node
             initNode.style.display = (query.length > 0 || currentCategory !== 'all') ? 'none' : 'flex';
         }
 
-        // Search Input Listener
         searchInput.addEventListener('input', filterGames);
 
-        // Category Button Listener
         categoryBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 categoryBtns.forEach(b => b.classList.remove('active'));
