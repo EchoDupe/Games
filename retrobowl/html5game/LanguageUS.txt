@@ -1171,3 +1171,16 @@ msg_Intro_RunningGamepad	Nice! At the start of each play you have the option to 
 msg_Intro_KickingGamepad	Great! Diving can help you reach for a first down or touchdown. It also protects against a fumble!##Finally, kicking. First set the power, then the direction.
 msg_Intro_SuccessPassGamepad	Excellent! This time the quarterback will drop back with the ball slightly...
 msg_Intro_SuccessRunGamepad	You can also run with the the quarterback.##Aim a throw then press the SCRAMBLE button.##Whilst running use the RIGHT STICK to dive.
+msg_touchback	TOUCHBACK
+msg_touchdown	TOUCHDOWN!
+msg_extra_point	EXTRA POINT
+msg_two_point	2PT CONVERSION
+msg_interception	INTERCEPTION!
+msg_fumble	FUMBLE!
+msg_sacked	SACKED!
+msg_incomplete	INCOMPLETE
+msg_out_of_bounds	OUT OF BOUNDS
+msg_pick_six	PICK SIX!
+msg_safety	SAFETY!
+msg_two_minute	2 MINUTE WARNING
+msg_fair_catch	FAIR CATCH
