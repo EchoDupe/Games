@@ -10,13 +10,8 @@
         <meta name="description" content="Monkey Mart is a fun game that you can play at school from chromebook. In our catalog you can find many cool online games that you may enjoy.">
         <script type="text/javascript" src="Jump_Game.js"></script>
         <style type="text/css">
-            /* Disable user selection to avoid strange bug in Chrome on Windows:
-            * Selecting a text outside the canvas, then clicking+draging would
-            * drag the selected text but block mouse down/up events to the engine.
-            */
             body {
                 position: fixed;
-                /* Prevent overscroll */
                 margin: 0;
                 padding: 0;
                 background-color: #ffffff;
@@ -32,79 +27,34 @@
                 background: #00BB61;
             }
 
-            .canvas-app-container:-webkit-full-screen {
-                /* Auto width and height in Safari/Chrome fullscreen. */
-                width: auto;
-                height: auto;
-            }
-
             #canvas {
                 outline: none;
                 border: 0;
                 width: 100%;
                 vertical-align: bottom;
                 background-repeat: no-repeat;
-                background-position: center;
                 background-position: top;
                 background-size: cover;
                 background-image: url("bg_loading.png");
             }
 
-            #canvas-container {
-                position: relative;
-            }
-
-            canvas:focus, canvas:active {
-                outline: none;
-                border: 0;
-                ie-dummy: expression(this.hideFocus=true);
-                -moz-outline-style: none;
-            }
-
-            div {
-                -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
-                -webkit-touch-callout: none;
-                -webkit-user-select: none;
-                -khtml-user-select: none;
-                -moz-user-select: none;
-                -ms-user-select: none;
-                user-select: none;
-            }
-
-            .canvas-app-progress {
-                position: absolute;
-                background-color: #0A8A40;
-                height: 30px;
-                margin-top: -30px;
-                width: 100%;
-            }
-
-            .canvas-app-progress-bar {
-                font-size: 12px;
-                height: 30px;
-                color: rgb(255, 255, 255);
-                background-color: #FFE333;
-                text-align: center;
-                line-height: 20px;
-            }
-
-            /* HUB BUTTON STYLES */
+            /* MOVED TO TOP RIGHT TO SHOW MONEY COUNTER */
             #return-terminal {
                 position: fixed;
-                top: 20px;
-                left: 20px;
+                top: 15px;
+                right: 15px;
                 z-index: 2147483647 !important;
-                background: #000;
-                border: 2px solid #06b6d4;
+                background: rgba(0, 0, 0, 0.8);
+                border: 1px solid #06b6d4;
                 color: #06b6d4;
-                padding: 12px 20px;
-                font-family: 'Space Grotesk', sans-serif;
-                font-size: 12px;
+                padding: 8px 15px;
+                font-family: sans-serif;
+                font-size: 11px;
                 font-weight: 900;
                 text-transform: uppercase;
-                letter-spacing: 2px;
+                letter-spacing: 1px;
                 cursor: pointer !important;
-                box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
+                box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
                 transition: all 0.2s;
             }
             #return-terminal:hover {
@@ -113,21 +63,17 @@
             }
 
             .buttons-background {
-                background-color: #ffffff;
-                width: 100%;
-                height: 42px;
-                display: none; /* Hidden to allow full screen game focus */
+                display: none;
             }
         </style>
     </head>
     <body>
-        <button id="return-terminal">← EXIT_TO_HUB</button>
+        <button id="return-terminal">EXIT_TO_HUB</button>
 
         <div id="app-container" class="canvas-app-container">
             <div id="canvas-container" class="canvas-app-canvas-container">
                 <canvas id="canvas" class="canvas-app-canvas" tabindex="1" width="960" height="640"></canvas>
             </div>
-            <div class="buttons-background"></div>
             <div id="progress-bar-root" style="position: absolute; bottom: 16%; left: 50%; visibility: hidden; z-index: 4;">
                 <img id="progress-bar-bg" src="load_bar_bg.png">
                 <img id="progress-bar-fg" src="load_bar_fg.png" style="position:absolute; clip: rect(0px,0px,0px,0px);">
@@ -167,44 +113,32 @@
 
             function resize_game_canvas() {
                 if (is_iOS) { window.scrollTo(0, 0); }
-
                 var app_container = document.getElementById('app-container');
                 var game_canvas = document.getElementById('canvas');
                 var progress_bar_root = document.getElementById('progress-bar-root');
                 var progress_bar_fg = document.getElementById('progress-bar-fg');
                 var progress_bar_bg = document.getElementById('progress-bar-bg');
                 var innerWidth = window.innerWidth;
-                var innerHeight = window.innerHeight - buttonHeight;
-                
+                var innerHeight = window.innerHeight;
                 if (prevInnerWidth == innerWidth && prevInnerHeight == innerHeight) { return; }
-                
                 prevInnerWidth = innerWidth;
                 prevInnerHeight = innerHeight;
-                var width = innerWidth;
-                var height = innerHeight;
-
-                app_container.style.width = width + "px";
-                app_container.style.height = height + buttonHeight + "px";
-                game_canvas.width = width;
-                game_canvas.height = height;
-
-                var bar_h = width < height ? width : height;
-                progress_bar_bg.width = Math.min(Math.ceil(bar_h * 0.06 * 300 / 24), width * 0.8);
+                app_container.style.width = innerWidth + "px";
+                app_container.style.height = innerHeight + "px";
+                game_canvas.width = innerWidth;
+                game_canvas.height = innerHeight;
+                var bar_h = innerWidth < innerHeight ? innerWidth : innerHeight;
+                progress_bar_bg.width = Math.min(Math.ceil(bar_h * 0.06 * 300 / 24), innerWidth * 0.8);
                 progress_bar_bg.style.marginLeft = -progress_bar_bg.width / 2 + "px";
                 progress_bar_fg.width = Math.ceil(progress_bar_bg.width * 1);
                 progress_bar_fg.style.marginLeft = -progress_bar_bg.width / 2 - progress_bar_fg.width / 2 + "px";
-                progress_bar_root.style.bottom = Math.ceil(height * 0.08 + buttonHeight) + "px";
+                progress_bar_root.style.bottom = Math.ceil(innerHeight * 0.08) + "px";
             }
-            
             resize_game_canvas();
             window.addEventListener('resize', resize_game_canvas, false);
             window.addEventListener('orientationchange', resize_game_canvas, false);
-            window.addEventListener("keydown", function(e) {
-                if ([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) { e.preventDefault(); }
-            }, false);
             window.addEventListener('focus', resize_game_canvas, false);
 
-            // HashSHA1 Implementation
             !function() {
                 var r = function(r) {
                     for (var n = "", t = 7; t >= 0; t--)
@@ -252,48 +186,26 @@
         </script>
 
         <script id="engine-start" type="text/javascript">
-            var currentPercentage = 0
             Progress.updateProgress = function(percentage) {
-                Progress.notifyListeners(percentage);
-                if (currentPercentage > percentage) { percentage = currentPercentage }
-                currentPercentage = percentage
                 var fg = document.getElementById('progress-bar-fg');
                 fg.style.clip = "rect(0px," + fg.width * percentage / 100 + "px," + fg.height + "px," + "0px)"
                 if (isNaN(percentage)) {
-                    var progress_bar_root = document.getElementById('progress-bar-root');
-                    progress_bar_root.style.visibility = "hidden";
+                    document.getElementById('progress-bar-root').style.visibility = "hidden";
                 }
             };
-            Progress.addProgress = function() {
-                document.getElementById('progress-bar-root').style.visibility = "visible"
-            }
-            Progress.removeProgress = function() {
-                document.getElementById('progress-bar-root').style.visibility = "hidden";
-                Module.canvas.style.background = "";
-            }
-            EngineLoader.stream_wasm = "false" === "true";
+            Progress.addProgress = function() { document.getElementById('progress-bar-root').style.visibility = "visible" }
+            Progress.removeProgress = function() { document.getElementById('progress-bar-root').style.visibility = "hidden"; }
             EngineLoader.load("canvas", "MonkeyMart");
         </script>
 
         <script type="text/javascript">
-            // TERMINAL REDIRECT & TITLE LOCK
             document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('return-terminal').addEventListener('click', function() {
                     window.location.replace("https://echodupe.github.io/Games/");
                 });
-
                 var targetTitle = "EchoDupe | Monkey Mart";
-                var lockTitle = function() { if (document.title !== targetTitle) document.title = targetTitle; };
-                lockTitle();
-                var observer = new MutationObserver(lockTitle);
-                observer.observe(document.querySelector('title'), { childList: true });
+                setInterval(function() { if (document.title !== targetTitle) document.title = targetTitle; }, 1000);
             });
-            
-            function poki_showBanner(vBanner) {}
-            function poki_showBigBanner(vBanner) {}
-            function poki_hideBanner(vBanner) {}
-            function poki_check() {}
         </script>
-        <script type="text/javascript" src="GameAnalytics.js"></script>
     </body>
 </html>
