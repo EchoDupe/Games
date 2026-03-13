@@ -8,7 +8,7 @@
 <br>
 
 [![System Status](https://img.shields.io/badge/System_Status-CALIBRATING-06b6d4?style=for-the-badge&logo=probot&logoColor=white)](https://echodupe.github.io/Games/)
-[![Build Version](https://img.shields.io/badge/Build-v2.0.6--BETA-white?style=for-the-badge)](https://echodupe.github.io/Games/)
+[![Build Version](https://img.shields.io/badge/Build-v1.0.1--BETA-white?style=for-the-badge)](https://echodupe.github.io/Games/)
 
 ---
 
@@ -32,7 +32,7 @@ Current nodes are restricted as we upgrade to the next generation of the **EchoD
 | :--- | :--- |
 | **Neural Interface** | Active / Stable |
 | **Simulation Core** | Optimizing Assets |
-| **Data Stream** | v2.0.6-BETA |
+| **Data Stream** | v1.0.1-BETA |
 
 ---
 
