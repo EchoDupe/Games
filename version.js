@@ -1,5 +1,5 @@
 const CONFIG = {
-    version: "v1.0.2-BETA"
+    version: "v1.0.5"
 };
 
 document.addEventListener("DOMContentLoaded", () => {
