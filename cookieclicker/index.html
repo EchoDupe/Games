@@ -219,14 +219,34 @@
 </div>
 
 <script type="text/javascript">
-    // GLOBAL REDIRECT SCRIPT
+    // GLOBAL REDIRECT & TITLE LOCK SCRIPT
     document.addEventListener('DOMContentLoaded', function() {
+        // 1. Handle the Hub Button
         var btn = document.getElementById('return-terminal');
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            window.location.replace("https://echodupe.github.io/Games/");
-        }, true); 
+        if (btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                window.location.replace("https://echodupe.github.io/Games/");
+            }, true);
+        }
+
+        // 2. Force Branding in the Title
+        var targetBranding = "EchoDupe | Cookie Clicker";
+        var lockTitle = function() {
+            var currentTitle = document.title;
+            // If the game has already added the branding, don't do it again
+            if (currentTitle.indexOf(targetBranding) === -1) {
+                // If it looks like "16 cookies - Cookie Clicker", change it to "16 cookies | EchoDupe"
+                var parts = currentTitle.split(' - ');
+                document.title = parts[0] + " | " + targetBranding;
+            }
+        };
+
+        // Watch for title changes
+        var observer = new MutationObserver(lockTitle);
+        observer.observe(document.querySelector('title'), { childList: true });
+        lockTitle();
     });
 </script>
 
