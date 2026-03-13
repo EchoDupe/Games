@@ -1184,3 +1184,5 @@ msg_pick_six	PICK SIX!
 msg_safety	SAFETY!
 msg_two_minute	2 MINUTE WARNING
 msg_fair_catch	FAIR CATCH
+ui_view	VIEW
+match_skiptime	SKIP TO END
