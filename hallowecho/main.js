@@ -5,7 +5,8 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-const assetsPath = 'HallowEcho/Assets/';
+// Updated to the new lowercase relative path
+const assetsPath = './assets/';
 const textureCache = {};
 const textureNames = [
     'grimy_plaster_wall.png', 'dusty_hardwood_floor.png', 
@@ -26,7 +27,7 @@ const sfx = {
 
 // Player State
 let player = {
-    x: 2.5, y: 2.5, // Map grid units
+    x: 2.5, y: 2.5, 
     dir: 0, 
     fov: Math.PI / 3,
     dead: false,
@@ -61,14 +62,15 @@ function castRays() {
             } else if (map[testY][testX] === 1) {
                 hitWall = true;
                 
-                // Draw 3D Wall Column
                 let wallHeight = height / distanceToWall;
                 let ceiling = (height - wallHeight) / 2;
                 
-                // Use your Plaster Wall texture
-                ctx.drawImage(textureCache['grimy_plaster_wall.png'], i, ceiling, 1, wallHeight);
+                // Drawing using the preloaded texture
+                if (textureCache['grimy_plaster_wall.png'].complete) {
+                    ctx.drawImage(textureCache['grimy_plaster_wall.png'], i, ceiling, 1, wallHeight);
+                }
                 
-                // Distance Shading (Atmosphere)
+                // Distance Shading
                 ctx.fillStyle = `rgba(0,0,0,${Math.min(1, distanceToWall / 10)})`;
                 ctx.fillRect(i, ceiling, 1, wallHeight);
             }
@@ -123,12 +125,16 @@ function draw() {
 function triggerGameOver() {
     player.dead = true;
     sfx.gameOver.play();
-    setTimeout(() => { window.location.reload(); }, 4000); // 4-second duration
+    setTimeout(() => { window.location.reload(); }, 4000);
 }
 
 window.initHallowEcho = () => {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    function loop() { update(); draw(); requestAnimationFrame(loop); }
+    function loop() { 
+        update(); 
+        draw(); 
+        requestAnimationFrame(loop); 
+    }
     loop();
 };

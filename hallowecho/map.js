@@ -10,23 +10,23 @@ const MAP_SETTINGS = {
 
 // Texture mapping for the grid
 const TILE_TYPES = {
-    1: 'grimy_plaster_wall.png',   // Living Room/Hall walls
-    0: 'dusty_hardwood_floor.png', // Main floor
-    2: 'kitchen_wall.png',         // Kitchen walls
-    3: 'kitchen_floor.png',        // Kitchen floor
-    'S': 'stairs_placeholder'      // We can use a dark floor for stairs
+    1: 'grimy_plaster_wall.png',   
+    0: 'dusty_hardwood_floor.png', 
+    2: 'kitchen_wall.png',         
+    3: 'kitchen_floor.png',        
+    'S': 'stairs'      
 };
 
 const houseData = {
     floor1: [
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 0, 0, 0, 0, 0, 2, 2, 2, 1], // Transition to kitchen on the right
+        [1, 0, 0, 0, 0, 0, 2, 2, 2, 1], 
         [1, 0, 0, 0, 0, 0, 3, 3, 2, 1],
         [1, 0, 0, 0, 0, 0, 3, 3, 2, 1],
         [1, 0, 0, 0, 0, 0, 3, 3, 2, 1],
         [1, 1, 1, 0, 0, 2, 2, 2, 2, 1],
         [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-        [1, 0, 0, 0, 0, 0, 0, 0, S, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 'S', 1],
         [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
     ],
@@ -38,14 +38,12 @@ const houseData = {
         [1, 1, 1, 1, 0, 1, 1, 1, 1, 1],
         [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
         [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-        [1, 0, 0, 0, 0, 0, 0, 0, S, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 'S', 1],
         [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
     ]
 };
 
-// Decor Objects (Static items placed in the world)
-// format: { x, y, img, w, h, floor }
 const decorObjects = [
     { x: 1400, y: 300, img: 'broken_refrigerator.png', w: 100, h: 180, floor: 'floor1' },
     { x: 1550, y: 300, img: 'rusted_stove.png', w: 100, h: 100, floor: 'floor1' },
