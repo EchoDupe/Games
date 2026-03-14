@@ -6,111 +6,71 @@
     <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no, shrink-to-fit=no" />
     <title>EchoDupe | HallowEcho</title>
     
-    <link rel="icon" type="image/png" href="assets/title.png">
+    <link rel="icon" type="image/png" href="HallowEcho/Assets/hallowecho.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css">
     
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background: #000;
-            overflow: hidden;
-            font-family: 'Helvetica', Arial, sans-serif;
-        }
-
-        canvas {
-            display: block;
-            width: 100vw;
-            height: 100vh;
-            cursor: none; 
-        }
+        body { margin: 0; padding: 0; background: #000; overflow: hidden; font-family: 'Helvetica', Arial, sans-serif; }
+        canvas { display: block; width: 100vw; height: 100vh; cursor: none; }
 
         /* HUB BUTTON */
         .back-to-hub {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 2147483647 !important;
-            background: rgba(15, 15, 20, 0.8);
-            border: 1px solid rgba(6, 182, 212, 0.5);
-            color: #06b6d4;
-            padding: 10px 18px;
-            border-radius: 12px;
-            font-weight: bold;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            backdrop-filter: blur(10px);
-            transition: all 0.3s ease;
-            box-shadow: 0 0 15px rgba(6, 182, 212, 0.2);
-            text-transform: uppercase;
-            font-size: 11px;
-            letter-spacing: 1px;
-            cursor: pointer !important;
+            position: fixed; top: 20px; left: 20px; z-index: 2147483647 !important;
+            background: rgba(15, 15, 20, 0.8); border: 1px solid rgba(6, 182, 212, 0.5);
+            color: #06b6d4; padding: 10px 18px; border-radius: 12px; font-weight: bold;
+            text-decoration: none; display: flex; align-items: center; gap: 8px;
+            backdrop-filter: blur(10px); transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.2); text-transform: uppercase;
+            font-size: 11px; letter-spacing: 1px; cursor: pointer !important;
         }
+        .back-to-hub:hover { background: #06b6d4; color: #000; }
 
-        .back-to-hub:hover {
-            background: #06b6d4;
-            color: #000;
-            box-shadow: 0 0 25px rgba(6, 182, 212, 0.6);
-            transform: translateY(-2px);
-        }
-
-        /* THE LOADER WITH title.png BACKGROUND */
+        /* LOADER */
         #loader {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('assets/title.png');
-            background-size: cover;
-            background-position: center;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #06b6d4;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 20px;
-            font-weight: bold;
-            letter-spacing: 4px;
-            z-index: 9999;
-            text-shadow: 0 0 10px rgba(6, 182, 212, 0.8);
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.75)), url('HallowEcho/Assets/hallowecho.png');
+            background-size: cover; background-position: center;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            color: #06b6d4; font-family: 'Courier New', Courier, monospace; z-index: 9999;
+            cursor: pointer;
+        }
+        .loading-text { font-size: 18px; font-weight: bold; letter-spacing: 5px; animation: flicker 2s infinite; }
+        @keyframes flicker {
+            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
+            20%, 22%, 24%, 55% { opacity: 0.2; }
         }
     </style>
 </head>
-
 <body>
 
     <a href="https://echodupe.github.io/Games/" class="back-to-hub" id="return-terminal-new">
-        <i class="fa-solid fa-house"></i>
-        <span>Back to Hub</span>
+        <i class="fa-solid fa-house"></i><span>Back to Hub</span>
     </a>
 
-    <div id="loader">INITIALIZING HALLOWECHO...</div>
+    <div id="loader" onclick="startGame()">
+        <div class="loading-text">CLICK TO INITIALIZE HALLOWECHO...</div>
+    </div>
     
     <canvas id="gameCanvas"></canvas>
-
-    <script type="text/javascript">
-        document.addEventListener('DOMContentLoaded', function() {
-            var btn = document.getElementById('return-terminal-new');
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                window.location.replace("https://echodupe.github.io/Games/");
-            }, true);
-
-            // Hide loader only when EVERYTHING (images, sounds, scripts) is ready
-            window.onload = function() {
-                setTimeout(() => {
-                    document.getElementById('loader').style.display = 'none';
-                }, 500); // Small delay for smoothness
-            };
-        });
-    </script>
 
     <script src="map.js"></script>
     <script src="main.js"></script>
 
+    <script>
+        function startGame() {
+            const loader = document.getElementById('loader');
+            loader.style.transition = "opacity 0.8s ease";
+            loader.style.opacity = "0";
+            setTimeout(() => loader.style.display = 'none', 800);
+            
+            // Initialize the game engine after user interaction
+            if (window.initHallowEcho) window.initHallowEcho();
+        }
+
+        document.getElementById('return-terminal-new').addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.replace("https://echodupe.github.io/Games/");
+        });
+    </script>
 </body>
 </html>
