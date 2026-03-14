@@ -28,7 +28,6 @@
             margin: 0;
         }
 
-        /* Background Effects */
         .bg-grid {
             background-size: 50px 50px;
             background-image: linear-gradient(to right, rgba(6, 182, 212, 0.07) 1px, transparent 1px), 
@@ -44,7 +43,6 @@
             z-index: -1;
         }
 
-        /* Typography */
         .brand-header {
             font-family: 'Space Grotesk', sans-serif;
             font-weight: 900;
@@ -62,7 +60,6 @@
             text-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
         }
 
-        /* Search & Filter UI */
         #filter-interface {
             max-width: 700px;
             width: 90%;
@@ -102,7 +99,6 @@
             background: rgba(6, 182, 212, 0.1);
         }
 
-        /* Game Cards */
         .game-card {
             position: relative;
             width: 200px;
@@ -207,8 +203,8 @@
                     </div>
                 </a>
 
-                <a href="basketball-stars/index.html" class="game-card" data-name="basketball stars" data-category="sports">
-                    <div class="icon-box"><img src="basketball-stars/basketballstars.png" alt="Basketball Stars"></div>
+                <a href="Basketball-stars/index.html" class="game-card" data-name="basketball stars" data-category="sports">
+                    <div class="icon-box"><img src="Basketball-stars/basketballstars.png" alt="Basketball Stars" onerror="this.src='assets/title.png'"></div>
                     <span class="glitch-text text-sm text-white mb-1">BASKETBALL STARS</span>
                     <div class="sub-label">
                         <span class="text-[8px] font-bold text-cyan-500/60 tracking-[0.1em] uppercase">Sports</span>
@@ -283,18 +279,15 @@
         const initNode = document.getElementById('init-node');
         let currentCategory = 'all';
 
-        // Alphabetical Sort Logic
         function sortGames() {
             const cards = Array.from(grid.querySelectorAll('.game-card[data-name]'));
             cards.sort((a, b) => {
-                const nameA = a.getAttribute('data-name').toLowerCase();
-                const nameB = b.getAttribute('data-name').toLowerCase();
+                const nameA = (a.getAttribute('data-name') || "").toLowerCase();
+                const nameB = (b.getAttribute('data-name') || "").toLowerCase();
                 return nameA.localeCompare(nameB);
             });
             
-            // Re-append sorted cards
             cards.forEach(card => grid.appendChild(card));
-            // Ensure Initializing node is always last
             grid.appendChild(initNode);
         }
 
@@ -303,8 +296,8 @@
             const gameCards = grid.querySelectorAll('.game-card[data-name]');
             
             gameCards.forEach(card => {
-                const name = card.getAttribute('data-name');
-                const category = card.getAttribute('data-category');
+                const name = card.getAttribute('data-name') || "";
+                const category = card.getAttribute('data-category') || "";
                 const matchesSearch = name.includes(query);
                 const matchesCategory = currentCategory === 'all' || category === currentCategory;
 
@@ -318,9 +311,7 @@
             }
         }
 
-        // Run sort on load
         window.addEventListener('DOMContentLoaded', sortGames);
-
         searchInput.addEventListener('input', filterGames);
 
         categoryBtns.forEach(btn => {
