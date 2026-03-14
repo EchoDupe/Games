@@ -2,87 +2,74 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
-    <title>EchoDupe | HallowEcho</title>
-    <link rel="icon" type="image/png" href="./assets/hallowecho.png">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css">
+    <title>HALLOWECHO | Extreme Edition</title>
     <style>
-        body { margin: 0; padding: 0; background: #000; overflow: hidden; font-family: 'Courier New', Courier, monospace; color: #fff; }
-        canvas { display: block; width: 100vw; height: 100vh; cursor: crosshair; }
-
-        /* Loader */
-        #loader {
-            position: fixed; inset: 0; background-color: #0a0a0a;
-            display: flex; flex-direction: column; align-items: center; z-index: 9999;
+        :root { --glitch-color: #06b6d4; }
+        body { margin: 0; background: #000; color: white; font-family: 'Courier New', monospace; overflow: hidden; user-select: none; }
+        #game-container { position: relative; width: 100vw; height: 100vh; }
+        canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+        
+        #ui-layer { position: absolute; inset: 0; pointer-events: none; }
+        #crosshair { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 10px; height: 10px; border: 1px solid var(--glitch-color); border-radius: 50%;
         }
-        .logo-container { flex: 1; display: flex; justify-content: center; align-items: center; width: 100%; }
-        .loader-logo { width: 300px; height: auto; filter: drop-shadow(0 0 15px rgba(6, 182, 212, 0.2)); }
-        .bottom-bar { width: 100%; padding-bottom: 60px; display: flex; justify-content: center; }
-        .init-box { border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.02); padding: 15px 60px; cursor: pointer; }
-        .init-box:hover { border-color: #06b6d4; background: rgba(6, 182, 212, 0.1); }
 
-        /* Settings Menu */
-        #settingsMenu {
-            display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(5, 5, 5, 0.95); border: 1px solid #06b6d4; padding: 30px;
-            z-index: 10000; text-align: center; box-shadow: 0 0 30px rgba(0,0,0,1);
+        #loader { 
+            position: fixed; inset: 0; background: #050505; z-index: 1000; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
         }
-        .setting-row { margin: 20px 0; }
-        input[type=range] { width: 200px; accent-color: #06b6d4; vertical-align: middle; }
+        .start-btn { 
+            padding: 20px 50px; border: 2px solid var(--glitch-color); background: transparent; 
+            color: var(--glitch-color); cursor: pointer; font-weight: bold; display: none;
+            text-shadow: 0 0 10px var(--glitch-color);
+        }
+        .start-btn:hover { background: var(--glitch-color); color: black; }
+
+        #settings { 
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9); border: 1px solid var(--glitch-color); padding: 40px;
+            display: none; z-index: 2000; pointer-events: auto;
+        }
     </style>
 </head>
 <body>
-
     <div id="loader">
-        <div class="logo-container"><img src="./assets/hallowecho.png" class="loader-logo"></div>
-        <div class="bottom-bar">
-            <div class="init-box" onclick="startGame()"><div>INITIALIZE_SYSTEM</div></div>
-        </div>
+        <h1 id="load-text">CALIBRATING SYSTEM...</h1>
+        <button id="start-btn" class="start-btn" onclick="startGame()">INIT_HALLOWECHO</button>
     </div>
 
-    <div id="settingsMenu">
-        <h2 style="color:#06b6d4; margin-top:0;">SETTINGS</h2>
-        <div class="setting-row">
-            <label>BRIGHTNESS</label><br>
-            <input type="range" id="brightnessRange" min="50" max="300" value="100">
+    <div id="settings">
+        <h2 style="color:var(--glitch-color)">ENGINE_CONFIG</h2>
+        <div style="margin:20px 0;">
+            <label>BRIGHTNESS_COEFFICIENT</label><br>
+            <input type="range" id="bright" min="50" max="400" value="100">
         </div>
-        <div class="setting-row">
-            <label>MOUSE SENSITIVITY</label><br>
-            <input type="range" id="sensRange" min="1" max="10" value="5">
+        <div style="margin:20px 0;">
+            <label>MOUSE_SENSITIVITY</label><br>
+            <input type="range" id="sens" min="1" max="20" value="10">
         </div>
-        <p style="font-size: 10px; color: #666;">CLICK CANVAS TO RELOCK MOUSE</p>
-        <button onclick="toggleSettings()" style="background:#06b6d4; border:none; padding:10px 20px; cursor:pointer; font-weight:bold; color: black;">CLOSE [P]</button>
+        <div style="margin:20px 0;">
+            <label>FOV_ADJUST</label><br>
+            <input type="range" id="fov" min="40" max="110" value="60">
+        </div>
+        <button onclick="toggleSettings()" style="cursor:pointer; padding:10px;">SAVE_AND_CLOSE [P]</button>
     </div>
 
-    <canvas id="gameCanvas" onclick="requestLock()"></canvas>
+    <div id="game-container">
+        <canvas id="gameCanvas" onclick="lockPointer()"></canvas>
+        <div id="ui-layer">
+            <div id="crosshair"></div>
+        </div>
+    </div>
 
     <script src="map.js"></script>
     <script src="main.js"></script>
-
     <script>
-        function requestLock() {
-            const canvas = document.getElementById('gameCanvas');
-            if (!settingsOpen) {
-                canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock;
-                canvas.requestPointerLock();
-            }
-        }
-
-        function startGame() {
-            const loader = document.getElementById('loader');
-            loader.style.background = "#000";
-            loader.innerHTML = ""; 
-            setTimeout(() => {
-                if (window.initHallowEcho) window.initHallowEcho();
-                loader.style.display = 'none';
-            }, 400);
-        }
-
-        function toggleSettings() {
-            const menu = document.getElementById('settingsMenu');
-            settingsOpen = !settingsOpen;
-            if (settingsOpen) document.exitPointerLock();
-            menu.style.display = settingsOpen ? 'block' : 'none';
+        function lockPointer() { if(!isPaused) document.getElementById('gameCanvas').requestPointerLock(); }
+        function startGame() { 
+            document.getElementById('loader').style.display = 'none'; 
+            if(window.initHallowEcho) window.initHallowEcho(); 
         }
     </script>
 </body>
