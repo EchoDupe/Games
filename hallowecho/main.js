@@ -1,55 +1,58 @@
 /**
- * HALLOWECHO: HARDENED RAYCASTING ENGINE
+ * main.js - HallowEcho Engine v1.3 (Spritework Update)
  */
-
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-
 const assetsPath = './assets/';
 const textureCache = {};
+
+// 1. ADD ALL YOUR DECOR TO THE LIST
 const textureNames = [
-    'grimy_plaster_wall.png', 'dusty_hardwood_floor.png', 
-    'kitchen_wall.png', 'creature_silhouette.png', 'game_over_static.png'
+    'grimy_plaster_wall.png', 'kitchen_wall.png', 'game_over_static.png',
+    'broken_refrigerator.png', 'rusted_stove.png', 'grimy_kitchen_sink.png'
 ];
 
-// Preload Textures with Status Logging
+let brightnessMultiplier = 1.0;
+let mouseSens = 0.002;
+let settingsOpen = false;
+let zBuffer = []; // To make sure sprites don't show through walls
+
+// Load Textures
 textureNames.forEach(name => {
     const img = new Image();
-    img.onload = () => console.log(`[HallowEcho] Asset Loaded: ${name}`);
-    img.onerror = () => console.error(`[HallowEcho] Asset Missing: ${name}`);
     img.src = assetsPath + name;
     textureCache[name] = img;
 });
 
-const sfx = {
-    gameOver: new Audio(assetsPath + 'game_over.mp3'),
-    footstep: new Audio(assetsPath + 'footstep_wood.mp3')
-};
-
-// Player State
-let player = {
-    x: 4.5, y: 8.5, // Start at door (updated from map.js spawn)
-    dir: -Math.PI / 2, // Face North
-    fov: Math.PI / 3,
-    dead: false,
-    stamina: 100
-};
-
+let player = { x: 4.5, y: 8.5, dir: -Math.PI / 2, fov: Math.PI / 3, dead: false };
 let keys = {};
-window.addEventListener('keydown', e => keys[e.code] = true);
+
+window.addEventListener('keydown', e => {
+    keys[e.code] = true;
+    if (e.code === 'KeyP') {
+        settingsOpen = !settingsOpen;
+        if (settingsOpen) document.exitPointerLock();
+        document.getElementById('settingsMenu').style.display = settingsOpen ? 'block' : 'none';
+    }
+});
 window.addEventListener('keyup', e => keys[e.code] = false);
 
-// Collision Helper: Checks if a grid coordinate is a wall
+document.addEventListener('mousemove', (e) => {
+    if ((document.pointerLockElement === canvas) && !player.dead && !settingsOpen) {
+        player.dir += e.movementX * mouseSens;
+    }
+});
+
 function isWall(x, y) {
     if (x < 0 || x >= 10 || y < 0 || y >= 10) return true;
     const tile = houseData.floor1[Math.floor(y)][Math.floor(x)];
-    return (tile === 1 || tile === 2); // 1 and 2 are walls
+    return (tile === 1 || tile === 2);
 }
 
 function castRays() {
     const width = canvas.width;
     const height = canvas.height;
-    const map = houseData.floor1;
+    zBuffer = []; // Reset Z-Buffer for sprites
 
     for (let i = 0; i < width; i++) {
         let rayAngle = (player.dir - player.fov / 2) + (i / width) * player.fov;
@@ -60,128 +63,107 @@ function castRays() {
         let eyeX = Math.cos(rayAngle);
         let eyeY = Math.sin(rayAngle);
 
-        // Ray Marching
         while (!hitWall && distanceToWall < 16) {
-            distanceToWall += 0.04; // Slightly larger step for performance
+            distanceToWall += 0.05;
             let testX = Math.floor(player.x + eyeX * distanceToWall);
             let testY = Math.floor(player.y + eyeY * distanceToWall);
-
             if (testX < 0 || testX >= 10 || testY < 0 || testY >= 10) {
                 hitWall = true; distanceToWall = 16;
             } else {
-                let cell = map[testY][testX];
-                if (cell === 1 || cell === 2) {
-                    hitWall = true;
-                    hitType = cell;
-                }
+                let cell = houseData.floor1[testY][testX];
+                if (cell === 1 || cell === 2) { hitWall = true; hitType = cell; }
             }
         }
 
-        // Draw 3D Walls
+        zBuffer[i] = distanceToWall; // Store distance for sprite clipping
+
         let wallHeight = height / distanceToWall;
         let ceiling = (height - wallHeight) / 2;
         
-        // Select Texture
         let tex = hitType === 2 ? textureCache['kitchen_wall.png'] : textureCache['grimy_plaster_wall.png'];
-        
         if (tex && tex.complete && tex.naturalWidth !== 0) {
             ctx.drawImage(tex, i, ceiling, 1, wallHeight);
         } else {
-            // Fallback: If image fails, draw a dark grey bar
-            ctx.fillStyle = hitType === 2 ? "#1a1a1a" : "#2a2a2a";
-            ctx.fillRect(i, ceiling, 1, wallHeight);
+            ctx.fillStyle = "#333"; ctx.fillRect(i, ceiling, 1, wallHeight);
         }
         
-        // Depth Shading (Darker in the distance)
-        let shade = Math.min(1, distanceToWall / 12);
-        ctx.fillStyle = `rgba(0,0,0,${shade})`;
+        let shadow = Math.min(0.9, distanceToWall / (12 * brightnessMultiplier));
+        ctx.fillStyle = `rgba(0,0,0,${shadow})`;
         ctx.fillRect(i, ceiling, 1, wallHeight);
     }
 }
 
-function drawMiniMap() {
-    const size = 10;
-    const map = houseData.floor1;
-    ctx.fillStyle = "rgba(0,0,0,0.7)";
-    ctx.fillRect(10, 10, 100, 100);
-    
-    for(let y=0; y<10; y++) {
-        for(let x=0; x<10; x++) {
-            if(map[y][x] === 1 || map[y][x] === 2) {
-                ctx.fillStyle = "#555";
-                ctx.fillRect(10 + x*10, 10 + y*10, 10, 10);
+// 2. NEW FUNCTION TO DRAW THE STOVE/FRIDGE
+function drawSprites() {
+    const width = canvas.width;
+    const height = canvas.height;
+
+    decorObjects.forEach(obj => {
+        // Convert map pixel coords to grid coords (1 tile = 200px in your map settings)
+        let objX = obj.x / 200;
+        let objY = obj.y / 200;
+
+        let dx = objX - player.x;
+        let dy = objY - player.y;
+        let dist = Math.sqrt(dx*dx + dy*dy);
+
+        // Calculate angle to sprite
+        let spriteAngle = Math.atan2(dy, dx) - player.dir;
+        while (spriteAngle < -Math.PI) spriteAngle += 2 * Math.PI;
+        while (spriteAngle > Math.PI) spriteAngle -= 2 * Math.PI;
+
+        // If it's within FOV
+        if (Math.abs(spriteAngle) < player.fov) {
+            let spriteSize = height / dist;
+            let xPos = (0.5 * (spriteAngle / (player.fov / 2)) + 0.5) * width;
+            let yPos = (height - spriteSize) / 2;
+
+            let tex = textureCache[obj.img];
+            if (tex && tex.complete && dist < zBuffer[Math.floor(xPos)]) {
+                ctx.drawImage(tex, xPos - spriteSize/2, yPos, spriteSize, spriteSize);
+                
+                // Darken sprites based on distance
+                let shade = Math.min(0.8, dist / 10);
+                ctx.fillStyle = `rgba(0,0,0,${shade})`;
+                ctx.fillRect(xPos - spriteSize/2, yPos, spriteSize, spriteSize);
             }
         }
-    }
-    // Draw Player dot
-    ctx.fillStyle = "cyan";
-    ctx.fillRect(10 + player.x*10 - 2, 10 + player.y*10 - 2, 4, 4);
+    });
 }
 
 function update() {
-    if (player.dead) return;
-
+    if (player.dead || settingsOpen) return;
     let moveSpeed = keys['ShiftLeft'] ? 0.08 : 0.05;
-    let rotSpeed = 0.04;
-
-    if (keys['KeyA']) player.dir -= rotSpeed;
-    if (keys['KeyD']) player.dir += rotSpeed;
-
     let nx = player.x;
     let ny = player.y;
 
-    if (keys['KeyW']) {
-        nx += Math.cos(player.dir) * moveSpeed;
-        ny += Math.sin(player.dir) * moveSpeed;
-    }
-    if (keys['KeyS']) {
-        nx -= Math.cos(player.dir) * moveSpeed;
-        ny -= Math.sin(player.dir) * moveSpeed;
-    }
+    if (keys['KeyW']) { nx += Math.cos(player.dir) * moveSpeed; ny += Math.sin(player.dir) * moveSpeed; }
+    if (keys['KeyS']) { nx -= Math.cos(player.dir) * moveSpeed; ny -= Math.sin(player.dir) * moveSpeed; }
+    if (keys['KeyA']) { nx += Math.cos(player.dir - Math.PI/2) * moveSpeed; ny += Math.sin(player.dir - Math.PI/2) * moveSpeed; }
+    if (keys['KeyD']) { nx += Math.cos(player.dir + Math.PI/2) * moveSpeed; ny += Math.sin(player.dir + Math.PI/2) * moveSpeed; }
 
-    // Basic Wall Sliding Collision
     if (!isWall(nx, player.y)) player.x = nx;
     if (!isWall(player.x, ny)) player.y = ny;
 }
 
 function draw() {
-    if (player.dead) {
-        ctx.drawImage(textureCache['game_over_static.png'], 0, 0, canvas.width, canvas.height);
-        return;
-    }
-
-    // Ceiling & Floor
-    ctx.fillStyle = "#020202"; ctx.fillRect(0, 0, canvas.width, canvas.height/2);
-    ctx.fillStyle = "#080808"; ctx.fillRect(0, canvas.height/2, canvas.width, canvas.height/2);
+    ctx.fillStyle = "#0a0a0a"; ctx.fillRect(0, 0, canvas.width, canvas.height/2);
+    ctx.fillStyle = "#151515"; ctx.fillRect(0, canvas.height/2, canvas.width, canvas.height/2);
 
     castRays();
+    drawSprites(); // DRAW STUFF AFTER WALLS
 
-    // Horror Vignette (Flashlight)
-    const grad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 20, canvas.width/2, canvas.height/2, canvas.width/0.7);
-    grad.addColorStop(0, 'rgba(0,0,0,0)');
-    grad.addColorStop(1, 'rgba(0,0,0,0.95)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    drawMiniMap(); // Helps you find your way
+    const grad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 50, canvas.width/2, canvas.height/2, canvas.width/(0.7 * brightnessMultiplier));
+    grad.addColorStop(0, 'transparent');
+    grad.addColorStop(1, 'black');
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
 window.initHallowEcho = () => {
-    console.log("HallowEcho initialized.");
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    
-    // Set Spawn from Map Data if available
-    if(houseData.spawn) {
-        player.x = houseData.spawn.x;
-        player.y = houseData.spawn.y;
-        player.dir = houseData.spawn.dir;
-    }
-
-    function loop() { 
-        update(); 
-        draw(); 
-        requestAnimationFrame(loop); 
-    }
+    player.x = houseData.spawn.x;
+    player.y = houseData.spawn.y;
+    function loop() { update(); draw(); requestAnimationFrame(loop); }
     loop();
 };
